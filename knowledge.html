@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>知識ライブラリ - ACTMATE</title>
+<style>
+  :root {
+    --red: #FF4655; --red-light: #fff0f2; --text: #111; --muted: #777;
+    --border: #eee; --card-shadow: 0 2px 16px rgba(0,0,0,0.06); --off-white: #f7f7f8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--off-white); color: var(--text); max-width: 430px; margin: 0 auto; min-height: 100vh; }
+  .hero { background: var(--red); padding: 52px 24px 32px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 60%); }
+  .hero-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 8px; }
+  .hero-title { font-size: 30px; font-weight: 900; color: white; display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .hero-title svg { width: 30px; height: 30px; flex-shrink: 0; }
+  .hero-sub { font-size: 13px; color: rgba(255,255,255,0.7); }
+
+  /* フォーカスバナー */
+  .focus-banner { background: #1a1a2e; color: white; font-size: 12px; font-weight: 700; padding: 11px 16px; display: none; align-items: center; gap: 8px; }
+  .focus-banner.visible { display: flex; }
+  .focus-banner svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--red); }
+  .focus-banner-text { flex: 1; font-weight: 600; color: rgba(255,255,255,0.85); }
+  .focus-banner-close { font-size: 18px; cursor: pointer; color: rgba(255,255,255,0.4); padding: 0 2px; line-height: 1; }
+
+  .content { padding: 20px 16px 110px; }
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin: 20px 0 10px 4px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .kb-card { background: white; border: 1.5px solid var(--border); border-radius: 18px; margin-bottom: 10px; box-shadow: var(--card-shadow); overflow: hidden; text-decoration: none; display: block; transition: transform 0.15s, border-color 0.2s; }
+  .kb-card:active { transform: scale(0.98); }
+
+  @keyframes focusPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,70,85,0.5); }
+    50%  { box-shadow: 0 0 0 10px rgba(255,70,85,0.08); }
+    100% { box-shadow: 0 0 0 0 rgba(255,70,85,0); }
+  }
+  .kb-card.focused { border-color: var(--red) !important; animation: focusPulse 1s ease 0.4s 2; }
+  .focus-tag { display: none; background: var(--red); color: white; font-size: 10px; font-weight: 700; padding: 5px 14px; letter-spacing: 0.5px; }
+  .kb-card.focused .focus-tag { display: block; }
+
+  .kb-inner { padding: 18px 20px 14px; display: flex; align-items: center; gap: 14px; }
+  .kb-icon { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .kb-icon svg { width: 24px; height: 24px; }
+  .kb-icon.red { background: var(--red); }
+  .kb-icon.red svg { color: white; }
+  .kb-icon.light { background: var(--red-light); }
+  .kb-icon.light svg { color: var(--red); }
+  .kb-icon.dark { background: #0d0f10; }
+  .kb-icon.dark svg { color: white; }
+  .kb-text { flex: 1; min-width: 0; }
+  .kb-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+  .kb-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .kb-arrow { flex-shrink: 0; color: var(--muted); }
+  .kb-arrow svg { width: 18px; height: 18px; }
+  .kb-tags { display: flex; gap: 5px; padding: 0 20px 14px; flex-wrap: wrap; }
+  .tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; background: var(--red-light); color: var(--red); border: 1px solid #ffd0d5; transition: background 0.2s, color 0.2s; }
+  .tag.highlight { background: var(--red); color: white; border-color: var(--red); }
+
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1.5px solid var(--border); display: flex; padding: 8px 0 22px; z-index: 100; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; padding: 4px 0; }
+  .nav-icon svg { width: 22px; height: 22px; color: var(--muted); }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .nav-item.active .nav-label { color: var(--red); }
+  .nav-item.active .nav-icon svg { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-label">ACTMATE</div>
+  <div class="hero-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+    知識ライブラリ
+  </div>
+  <div class="hero-sub">理論・エージェント・プロの練習を体系的に学ぶ</div>
+</div>
+
+<!-- AI診断からの誘導バナー -->
+<div class="focus-banner" id="focus-banner">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+  <span class="focus-banner-text" id="focus-banner-text">AI診断からの推薦コンテンツです</span>
+  <span class="focus-banner-close" onclick="clearFocus()">×</span>
+</div>
+
+<div class="content">
+
+  <div class="section-label">ゲーム理論</div>
+
+  <a href="mindmap.html" class="kb-card" id="card-theory" data-focus-ids="aim-crosshair,positioning,trade,crossfire,acs-impact">
+    <div class="focus-tag">🧠 AI診断がここを推薦しています</div>
+    <div class="kb-inner">
+      <div class="kb-icon light">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V8"/><path d="M12 8C12 8 8 6 6 3"/><path d="M12 8C12 8 16 6 18 3"/><path d="M12 14C12 14 9 13 7 11"/><path d="M12 14C12 14 15 13 17 11"/><circle cx="12" cy="21" r="1" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <div class="kb-text">
+        <div class="kb-title">理論ツリー</div>
+        <div class="kb-desc">エイム・立ち回り・マクロ・メンタルを体系的に学ぶ</div>
+      </div>
+      <div class="kb-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="kb-tags">
+      <span class="tag" id="tag-aim-crosshair">クロスヘア</span>
+      <span class="tag" id="tag-positioning">立ち回り</span>
+      <span class="tag" id="tag-trade">トレード</span>
+      <span class="tag" id="tag-crossfire">クロスファイア</span>
+      <span class="tag" id="tag-acs-impact">ACS向上</span>
+      <span class="tag">マクロ</span><span class="tag">ミクロ</span><span class="tag">メンタル</span><span class="tag">武器</span>
+    </div>
+  </a>
+
+  <a href="agent.html" class="kb-card" id="card-agent">
+    <div class="focus-tag">🧠 AI診断がここを推薦しています</div>
+    <div class="kb-inner">
+      <div class="kb-icon red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg>
+      </div>
+      <div class="kb-text">
+        <div class="kb-title">エージェントツリー</div>
+        <div class="kb-desc">Jettのアビリティ・OP理論・ムーブメントを深掘り</div>
+      </div>
+      <div class="kb-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="kb-tags">
+      <span class="tag">Jett</span><span class="tag">アビリティ</span><span class="tag">OP理論</span><span class="tag">ダッシュ</span><span class="tag">コンボ</span>
+    </div>
+  </a>
+
+  <div class="section-label">プロの練習</div>
+
+  <a href="pro-db.html" class="kb-card" id="card-proDb">
+    <div class="focus-tag">🧠 AI診断がここを推薦しています</div>
+    <div class="kb-inner">
+      <div class="kb-icon dark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+      </div>
+      <div class="kb-text">
+        <div class="kb-title">プロ練習大全</div>
+        <div class="kb-desc">世界4大リーグの「伸びた選手」のルーティンをコピー</div>
+      </div>
+      <div class="kb-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="kb-tags">
+      <span class="tag">Pacific</span><span class="tag">Americas</span><span class="tag">EMEA</span><span class="tag">China</span>
+    </div>
+  </a>
+
+  <a href="pro-routines.html" class="kb-card" id="card-routines" data-focus-ids="aim-microflick">
+    <div class="focus-tag">🧠 AI診断がここを推薦しています</div>
+    <div class="kb-inner">
+      <div class="kb-icon light">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      </div>
+      <div class="kb-text">
+        <div class="kb-title">ウォームアップ大全</div>
+        <div class="kb-desc">プロ別・シナリオ別の練習メニューを一覧で確認</div>
+      </div>
+      <div class="kb-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="kb-tags">
+      <span class="tag" id="tag-aim-microflick">マイクロフリック</span>
+      <span class="tag">TenZ</span><span class="tag">yay</span><span class="tag">aspas</span><span class="tag">nAts</span><span class="tag">Kovaak's</span>
+    </div>
+  </a>
+
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><span class="nav-label">ホーム</span></a>
+  <a class="nav-item active" href="knowledge.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="nav-label">知識</span></a>
+  <a class="nav-item" href="tracker.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="nav-label">トラッカー</span></a>
+  <a class="nav-item" href="routine.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><span class="nav-label">ルーティン</span></a>
+  <a class="nav-item" href="goal.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></div><span class="nav-label">目標</span></a>
+</nav>
+
+<script>
+const FOCUS_MAP = {
+  'aim-microflick': { cardId:'card-routines', tagId:'tag-aim-microflick', label:'マイクロフリック練習' },
+  'aim-crosshair':  { cardId:'card-theory',   tagId:'tag-aim-crosshair',  label:'クロスヘア理論' },
+  'positioning':    { cardId:'card-theory',   tagId:'tag-positioning',    label:'ポジショニング理論' },
+  'trade':          { cardId:'card-theory',   tagId:'tag-trade',          label:'トレード理論' },
+  'crossfire':      { cardId:'card-theory',   tagId:'tag-crossfire',      label:'クロスファイア理論' },
+  'acs-impact':     { cardId:'card-theory',   tagId:'tag-acs-impact',     label:'ACS向上' },
+};
+
+function clearFocus() {
+  document.getElementById('focus-banner').classList.remove('visible');
+  document.querySelectorAll('.kb-card.focused').forEach(c=>c.classList.remove('focused'));
+  document.querySelectorAll('.tag.highlight').forEach(t=>t.classList.remove('highlight'));
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const focus = new URLSearchParams(window.location.search).get('focus');
+  if (!focus || !FOCUS_MAP[focus]) return;
+  const { cardId, tagId, label } = FOCUS_MAP[focus];
+  const card = document.getElementById(cardId);
+  const tag  = document.getElementById(tagId);
+  if (!card) return;
+  card.classList.add('focused');
+  if (tag) tag.classList.add('highlight');
+  document.getElementById('focus-banner-text').textContent = `AI診断から推薦：「${label}」のコンテンツへ移動しました`;
+  document.getElementById('focus-banner').classList.add('visible');
+  setTimeout(() => card.scrollIntoView({ behavior:'smooth', block:'center' }), 300);
+});
+</script>
+</body>
+</html>

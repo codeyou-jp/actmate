@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>目標 - ACTMATE</title>
+<style>
+  :root {
+    --red: #FF4655;
+    --red-light: #fff0f2;
+    --text: #111;
+    --muted: #888;
+    --border: #eee;
+    --card-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    --off-white: #f7f7f8;
+    --green: #22c55e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--off-white); color: var(--text);
+    max-width: 430px; margin: 0 auto; min-height: 100vh;
+  }
+
+  .header {
+    background: var(--red); padding: 52px 24px 28px;
+    position: relative; overflow: hidden;
+  }
+  .header::after {
+    content: ''; position: absolute; bottom: -50px; right: -30px;
+    width: 130px; height: 130px; border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .header-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 6px; }
+  .header-title { font-size: 28px; font-weight: 900; color: white; display: flex; align-items: center; gap: 10px; }
+  .header-title svg { width: 26px; height: 26px; }
+
+  .content { padding: 20px 16px 110px; }
+
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; padding-left: 4px; }
+
+  .card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 18px 20px; margin-bottom: 12px; box-shadow: var(--card-shadow); }
+  .card-title { font-size: 13px; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title svg { width: 16px; height: 16px; color: var(--red); }
+
+  /* ===== 進捗カード ===== */
+  .rank-display { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .rank-box { text-align: center; flex: 1; }
+  .rank-img-wrap { width: 60px; height: 60px; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; }
+  .rank-img-wrap img { width: 56px; height: 56px; object-fit: contain; }
+  .rank-name { font-size: 13px; font-weight: 800; }
+  .rank-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .rank-arrow { font-size: 18px; color: var(--red); flex-shrink: 0; padding: 0 6px; font-weight: 700; }
+
+  .progress-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+  .progress-label { color: var(--muted); }
+  .progress-value { font-weight: 800; color: var(--red); }
+  .progress-bar { height: 10px; background: var(--border); border-radius: 100px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--red), #ff8a94); border-radius: 100px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+
+  .progress-steps { display: flex; align-items: center; margin-top: 10px; gap: 0; }
+  .step-seg { flex: 1; height: 3px; background: var(--border); }
+  .step-seg.done { background: var(--red); }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .step-dot.done { background: var(--red); }
+  .step-dot.current { background: white; border: 2px solid var(--red); box-shadow: 0 0 0 3px rgba(255,70,85,0.2); width: 10px; height: 10px; }
+
+  /* ===== 2段階ランク選択 ===== */
+  /* STEP 1: ティアタブ */
+  .tier-tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; border-bottom: 1.5px solid var(--border); margin-bottom: 16px; }
+  .tier-tabs::-webkit-scrollbar { display: none; }
+  .tier-tab {
+    flex-shrink: 0; padding: 8px 12px; font-size: 11px; font-weight: 700;
+    color: var(--muted); border: none; background: none; cursor: pointer;
+    font-family: inherit; border-bottom: 2px solid transparent;
+    transition: all 0.15s; white-space: nowrap;
+    margin-bottom: -1.5px;
+  }
+  .tier-tab.active { color: var(--red); border-bottom-color: var(--red); }
+
+  /* STEP 2: 番号選択 */
+  .rank-picker { display: flex; gap: 10px; justify-content: center; }
+  .rank-pick-btn {
+    flex: 1; border: 2px solid var(--border); border-radius: 14px;
+    padding: 12px 8px; text-align: center; cursor: pointer;
+    background: white; font-family: inherit; transition: all 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .rank-pick-btn:active { transform: scale(0.96); }
+  .rank-pick-btn.selected { border-color: var(--red); background: var(--red-light); }
+  .rank-pick-btn img { width: 52px; height: 52px; object-fit: contain; }
+  .rank-pick-num { font-size: 13px; font-weight: 900; color: var(--muted); }
+  .rank-pick-btn.selected .rank-pick-num { color: var(--red); }
+
+  /* ラジアント単体 */
+  .rank-pick-single {
+    border: 2px solid var(--border); border-radius: 14px;
+    padding: 14px; text-align: center; cursor: pointer;
+    background: white; font-family: inherit; transition: all 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    width: 140px; margin: 0 auto;
+  }
+  .rank-pick-single.selected { border-color: var(--red); background: var(--red-light); }
+  .rank-pick-single img { width: 64px; height: 64px; object-fit: contain; }
+  .rank-pick-single-label { font-size: 13px; font-weight: 900; color: var(--muted); }
+  .rank-pick-single.selected .rank-pick-single-label { color: var(--red); }
+
+  /* トラッカー */
+  .tracker-row { display: flex; align-items: center; gap: 10px; }
+  .tracker-input { flex: 1; border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+  .tracker-input:focus { border-color: var(--red); }
+  .tracker-btn { background: var(--red); color: white; border: none; border-radius: 12px; padding: 11px 16px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .tracker-hint { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  /* フォーカス */
+  .focus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .focus-btn {
+    border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 12px;
+    cursor: pointer; transition: all 0.15s; background: white; font-family: inherit;
+    text-align: left; display: flex; align-items: center; gap: 8px;
+  }
+  .focus-btn:active { transform: scale(0.97); }
+  .focus-btn.selected { border-color: var(--red); background: var(--red-light); }
+  .focus-icon svg { width: 20px; height: 20px; color: var(--muted); }
+  .focus-btn.selected .focus-icon svg { color: var(--red); }
+  .focus-name { font-size: 12px; font-weight: 700; }
+
+  .save-btn { width: 100%; background: var(--red); color: white; border: none; border-radius: 16px; padding: 16px; font-size: 15px; font-weight: 800; font-family: inherit; cursor: pointer; margin-top: 8px; transition: opacity 0.15s; }
+  .save-btn:active { opacity: 0.85; }
+
+  .section-gap { margin-top: 20px; }
+
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1.5px solid var(--border); display: flex; padding: 8px 0 22px; z-index: 100; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; padding: 4px 0; }
+  .nav-icon svg { width: 22px; height: 22px; color: var(--muted); }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .nav-item.active .nav-label { color: var(--red); }
+  .nav-item.active .nav-icon svg { color: var(--red); }
+
+  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; z-index: 999; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">ACTMATE</div>
+  <div class="header-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+      <circle cx="12" cy="12" r="1.5" fill="white" stroke="none"/>
+      <line x1="21" y1="3" x2="16.5" y2="7.5"/><polyline points="19,2 22,2 22,5"/>
+    </svg>
+    目標・進捗
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- 進捗カード -->
+  <div class="section-label">今アクトの進捗</div>
+  <div class="card">
+    <div class="rank-display">
+      <div class="rank-box">
+        <div class="rank-img-wrap" id="start-img"></div>
+        <div class="rank-name" id="start-name">—</div>
+        <div class="rank-sub">スタート</div>
+      </div>
+      <div class="rank-arrow">→</div>
+      <div class="rank-box">
+        <div class="rank-img-wrap" id="current-img"></div>
+        <div class="rank-name" id="current-name">現在</div>
+        <div class="rank-sub">現在</div>
+      </div>
+      <div class="rank-arrow">→</div>
+      <div class="rank-box">
+        <div class="rank-img-wrap"><img src="rank_icons/dia3.png"></div>
+        <div class="rank-name">Diamond 3</div>
+        <div class="rank-sub">目標</div>
+      </div>
+    </div>
+    <div class="progress-row">
+      <span class="progress-label">目標まで</span>
+      <span class="progress-value" id="progress-pct">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="progress-steps" id="progress-steps"></div>
+  </div>
+
+  <!-- トラッカー連携 -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+      </svg>
+      Valorant Tracker 連携
+    </div>
+    <div class="tracker-row">
+      <input class="tracker-input" id="riot-id-input" type="text" placeholder="RiotID#JP1" autocomplete="off">
+      <button class="tracker-btn" onclick="openTracker()">開く →</button>
+    </div>
+    <div class="tracker-hint">入力するとトラッカーに直接飛べます</div>
+  </div>
+
+  <!-- 現在ランクを設定 -->
+  <div class="section-gap">
+    <div class="section-label">現在のランクを設定</div>
+    <div class="card">
+      <!-- STEP 1: ティア選択タブ -->
+      <div class="tier-tabs" id="tier-tabs"></div>
+      <!-- STEP 2: 番号選択 -->
+      <div id="rank-picker-area"></div>
+    </div>
+  </div>
+
+  <!-- フォーカス -->
+  <div class="section-gap">
+    <div class="section-label">今フォーカスしたいこと</div>
+    <div class="card">
+      <div class="focus-grid" id="focus-grid"></div>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveGoal()">設定を保存してルーティンに反映 →</button>
+
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><span class="nav-label">ホーム</span></a>
+  <a class="nav-item" href="knowledge.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="nav-label">知識</span></a>
+  <a class="nav-item" href="tracker.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="nav-label">トラッカー</span></a>
+  <a class="nav-item" href="routine.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><span class="nav-label">ルーティン</span></a>
+  <a class="nav-item active" href="goal.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></div><span class="nav-label">目標</span></a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TIERS = [
+  { key:'iron',      label:'Iron',      ids:['iron1','iron2','iron3'],           tiers:[0,1,2] },
+  { key:'bronze',    label:'Bronze',    ids:['bronze1','bronze2','bronze3'],     tiers:[3,4,5] },
+  { key:'silver',    label:'Silver',    ids:['silver1','silver2','silver3'],     tiers:[6,7,8] },
+  { key:'gold',      label:'Gold',      ids:['gold1','gold2','gold3'],           tiers:[9,10,11] },
+  { key:'plat',      label:'Platinum',  ids:['plat1','plat2','plat3'],           tiers:[12,13,14] },
+  { key:'dia',       label:'Diamond',   ids:['dia1','dia2','dia3'],              tiers:[15,16,17] },
+  { key:'asc',       label:'Ascendant', ids:['asc1','asc2','asc3'],              tiers:[18,19,20] },
+  { key:'imm',       label:'Immortal',  ids:['imm1','imm2','imm3'],              tiers:[21,22,23] },
+  { key:'radiant',   label:'Radiant',   ids:['radiant'],                         tiers:[24] },
+];
+
+const RANK_NAMES = {
+  iron1:'Iron 1',iron2:'Iron 2',iron3:'Iron 3',
+  bronze1:'Bronze 1',bronze2:'Bronze 2',bronze3:'Bronze 3',
+  silver1:'Silver 1',silver2:'Silver 2',silver3:'Silver 3',
+  gold1:'Gold 1',gold2:'Gold 2',gold3:'Gold 3',
+  plat1:'Plat 1',plat2:'Plat 2',plat3:'Plat 3',
+  dia1:'Diamond 1',dia2:'Diamond 2',dia3:'Diamond 3',
+  asc1:'Ascendant 1',asc2:'Ascendant 2',asc3:'Ascendant 3',
+  imm1:'Immortal 1',imm2:'Immortal 2',imm3:'Immortal 3',
+  radiant:'Radiant',
+};
+
+const RANK_TIER = {};
+TIERS.forEach(t => t.ids.forEach((id, i) => RANK_TIER[id] = t.tiers[i]));
+
+const GOAL_ID = 'dia3';
+const GOAL_TIER = 17;
+
+const FOCUS_OPTIONS = [
+  { id:'aim',      label:'エイム精度',   svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>` },
+  { id:'flick',    label:'フリック',     svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>` },
+  { id:'movement', label:'ムーブメント', svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="M9 12l-3 8"/><path d="M15 12l3 8"/><path d="M9 12c0-2 1.5-4 3-4s3 2 3 4l2 4H7l2-4z"/></svg>` },
+  { id:'peeks',    label:'ピーク',       svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>` },
+  { id:'macro',    label:'マクロ',       svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3,11 22,2 13,21 11,13 3,11"/></svg>` },
+  { id:'economy',  label:'エコノミー',   svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>` },
+  { id:'mental',   label:'メンタル',     svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2a6 6 0 014.9 9.4L12 14l-2.4-2.6A6 6 0 019.5 2z"/><path d="M12 14v8"/><path d="M9 18h6"/></svg>` },
+  { id:'comms',    label:'コミュ',       svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>` },
+];
+
+let state = {
+  currentRank: 'plat3',
+  startRank: 'plat3',    // 最初に設定したランク（0%の基準）
+  focusAreas: ['aim','movement'],
+  riotId: '',
+  selectedTier: 'plat',
+};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('actmate_goal');
+    if (s) state = { ...state, ...JSON.parse(s) };
+  } catch(e) {}
+}
+
+function saveGoal() {
+  // 初めて保存するときはstartRankを現在に設定
+  if (!state.startRank) state.startRank = state.currentRank;
+  localStorage.setItem('actmate_goal', JSON.stringify(state));
+  showToast('設定を保存しました ✓');
+  setTimeout(() => { window.location.href = 'routine.html'; }, 800);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function openTracker() {
+  const id = document.getElementById('riot-id-input').value.trim();
+  if (!id) { showToast('Riot IDを入力してください'); return; }
+  state.riotId = id;
+  window.open(`https://tracker.gg/valorant/profile/riot/${id.replace('#','%23')}/overview`, '_blank');
+}
+
+// ===== ティアタブ描画 =====
+function renderTierTabs() {
+  const tabs = document.getElementById('tier-tabs');
+  tabs.innerHTML = TIERS.map(t => `
+    <button class="tier-tab ${state.selectedTier === t.key ? 'active' : ''}"
+      onclick="selectTier('${t.key}', this)">${t.label}</button>
+  `).join('');
+}
+
+function selectTier(key, btn) {
+  state.selectedTier = key;
+  document.querySelectorAll('.tier-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRankPicker();
+}
+
+// ===== ランク番号選択 =====
+function renderRankPicker() {
+  const area = document.getElementById('rank-picker-area');
+  const tier = TIERS.find(t => t.key === state.selectedTier);
+  if (!tier) return;
+
+  if (tier.ids.length === 1) {
+    // Radiant
+    const id = tier.ids[0];
+    const selected = state.currentRank === id;
+    area.innerHTML = `
+      <button class="rank-pick-single ${selected ? 'selected' : ''}" onclick="selectRank('${id}')">
+        <img src="rank_icons/${id}.png">
+        <div class="rank-pick-single-label">Radiant</div>
+      </button>`;
+  } else {
+    area.innerHTML = `<div class="rank-picker">${tier.ids.map((id, i) => {
+      const selected = state.currentRank === id;
+      return `
+        <button class="rank-pick-btn ${selected ? 'selected' : ''}" onclick="selectRank('${id}')">
+          <img src="rank_icons/${id}.png">
+          <div class="rank-pick-num">${i + 1}</div>
+        </button>`;
+    }).join('')}</div>`;
+  }
+}
+
+function selectRank(id) {
+  state.currentRank = id;
+  // ティアも同期
+  const tier = TIERS.find(t => t.ids.includes(id));
+  if (tier) state.selectedTier = tier.key;
+  renderRankPicker();
+  updateProgress();
+}
+
+// ===== フォーカス =====
+function renderFocus() {
+  document.getElementById('focus-grid').innerHTML = FOCUS_OPTIONS.map(f => `
+    <button class="focus-btn ${state.focusAreas.includes(f.id) ? 'selected' : ''}" onclick="toggleFocus('${f.id}')">
+      <div class="focus-icon">${f.svg}</div>
+      <span class="focus-name">${f.label}</span>
+    </button>
+  `).join('');
+}
+
+function toggleFocus(id) {
+  state.focusAreas = state.focusAreas.includes(id)
+    ? state.focusAreas.filter(f => f !== id)
+    : [...state.focusAreas, id];
+  renderFocus();
+}
+
+// ===== 進捗（0% = スタートランク、100% = Diamond 3） =====
+function updateProgress() {
+  const cur = state.currentRank;
+  const start = state.startRank || cur;
+
+  const curTier   = RANK_TIER[cur]   ?? 0;
+  const startTier = RANK_TIER[start] ?? 0;
+  const goalTier  = GOAL_TIER;
+
+  // 表示
+  document.getElementById('start-img').innerHTML  = `<img src="rank_icons/${start}.png">`;
+  document.getElementById('start-name').textContent = RANK_NAMES[start] || start;
+  document.getElementById('current-img').innerHTML = `<img src="rank_icons/${cur}.png">`;
+  document.getElementById('current-name').textContent = RANK_NAMES[cur] || cur;
+
+  // 進捗 = 現在がスタートから何%進んだか
+  const range = goalTier - startTier;
+  const progress = range <= 0 ? 100 : Math.min(100, Math.max(0, Math.round(((curTier - startTier) / range) * 100)));
+
+  document.getElementById('progress-pct').textContent = progress + '%';
+  document.getElementById('progress-fill').style.width = progress + '%';
+
+  // ステップドット（スタート〜ゴール間のティア境界）
+  const stepsEl = document.getElementById('progress-steps');
+  const milestones = [startTier, ...TIERS.map(t => t.tiers[t.tiers.length - 1]).filter(t => t > startTier && t <= goalTier)];
+  if (!milestones.includes(goalTier)) milestones.push(goalTier);
+
+  let html = '';
+  milestones.forEach((t, i) => {
+    let cls = 'step-dot';
+    if (t < curTier) cls += ' done';
+    else if (t === curTier) cls += ' current';
+    html += `<div class="${cls}"></div>`;
+    if (i < milestones.length - 1) {
+      html += `<div class="step-seg ${t < curTier ? 'done' : ''}"></div>`;
+    }
+  });
+  stepsEl.innerHTML = html;
+}
+
+// 初期化
+loadState();
+document.getElementById('riot-id-input').value = state.riotId || '';
+
+// 初回保存がない場合はstartをcurrentに合わせる
+if (!state.startRank) state.startRank = state.currentRank;
+
+// selectedTierをcurrentRankから推定
+const initTier = TIERS.find(t => t.ids.includes(state.currentRank));
+if (initTier) state.selectedTier = initTier.key;
+
+renderTierTabs();
+renderRankPicker();
+renderFocus();
+updateProgress();
+</script>
+</body>
+</html>

@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理論ツリー — ACTMATE</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --red: #FF4655;
+    --bg: #ffffff;
+    --text: #0f1923;
+    --muted: #9ca3af;
+    --border: #f0f0f0;
+    --card: #fafafa;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-bottom: 120px;
+  }
+
+  /* ヘッダー */
+  .header {
+    padding: 52px 20px 16px;
+    position: sticky;
+    top: 0;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    z-index: 50;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb-item {
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .breadcrumb-item:hover { color: var(--red); }
+  .breadcrumb-item.active { color: var(--text); font-weight: 700; pointer-events: none; }
+  .breadcrumb-sep { color: var(--border); }
+
+  .header-title { font-size: 20px; font-weight: 800; }
+  .header-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* ツリーノード */
+  .tree-container { padding: 16px 16px 8px; }
+
+  .node-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+  }
+
+  .node-card:active { transform: scale(0.97); }
+
+  .node-card.selected {
+    border-color: var(--red);
+    background: #fff5f5;
+  }
+
+  .node-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .node-content { flex: 1; }
+  .node-title { font-size: 15px; font-weight: 800; }
+  .node-desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+  .node-arrow { font-size: 20px; color: var(--muted); flex-shrink: 0; }
+  .node-card.has-children .node-arrow::after { content: '›'; }
+
+  /* リーフノード（追加できる最終項目） */
+  .leaf-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 10px;
+    transition: all 0.15s;
+  }
+
+  .leaf-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .leaf-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .leaf-title { font-size: 15px; font-weight: 800; flex: 1; }
+  .leaf-time {
+    font-size: 11px; font-weight: 700;
+    background: rgba(255,70,85,0.08);
+    color: var(--red);
+    border-radius: 20px;
+    padding: 3px 10px;
+    flex-shrink: 0;
+  }
+
+  .leaf-body {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.75;
+    margin-bottom: 14px;
+  }
+
+  .leaf-body strong { color: var(--red); }
+
+  .leaf-tip {
+    background: #fffbf0;
+    border-left: 3px solid #f5c518;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #7a6000;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  .btn-add {
+    width: 100%;
+    background: var(--text);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  .btn-add:active { transform: scale(0.97); }
+
+  .btn-add.added {
+    background: #22c55e;
+  }
+
+  /* カートバー */
+  .cart-bar {
+    position: fixed;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 14px 16px 32px;
+    z-index: 100;
+    transition: transform 0.3s;
+  }
+
+  .cart-bar.empty { transform: translateX(-50%) translateY(100%); }
+
+  .cart-bar-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cart-count {
+    width: 44px; height: 44px;
+    background: var(--red);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    font-weight: 900;
+    color: white;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .cart-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    width: 18px; height: 18px;
+    background: #0f1923;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 900;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .cart-info { flex: 1; }
+  .cart-title { font-size: 13px; font-weight: 800; }
+  .cart-preview { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .btn-view-routine {
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  /* ルーティンモーダル */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: flex-end;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal-sheet {
+    background: white;
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    border-radius: 24px 24px 0 0;
+    padding: 28px 20px 48px;
+    animation: slideUp 0.3s ease;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+  .routine-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .routine-item:last-of-type { border-bottom: none; }
+
+  .routine-item-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+
+  .routine-item-text { flex: 1; font-size: 14px; font-weight: 600; }
+  .routine-item-time { font-size: 11px; font-weight: 700; color: var(--red); }
+
+  .routine-item-del {
+    width: 28px; height: 28px;
+    background: #fff0f0;
+    border-radius: 50%;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--red);
+    font-family: inherit;
+  }
+
+  .routine-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0 20px;
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .routine-total-time { font-size: 20px; font-weight: 900; color: var(--red); }
+
+  .btn-save-routine {
+    width: 100%;
+    background: var(--text);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* アニメ */
+  .fade-in {
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="header">
+  <div class="breadcrumb" id="breadcrumb">
+    <span class="breadcrumb-item active">トップ</span>
+  </div>
+  <div class="header-title" id="headerTitle">理論ライブラリ</div>
+  <div class="header-sub" id="headerSub">気になる理論を選んで、ルーティンを作ろう</div>
+</div>
+
+<!-- ツリーコンテンツ -->
+<div class="tree-container" id="treeContainer"></div>
+
+<!-- カートバー -->
+<div class="cart-bar empty" id="cartBar">
+  <div class="cart-bar-inner">
+    <div class="cart-count">
+      📋
+      <div class="cart-badge" id="cartBadge">0</div>
+    </div>
+    <div class="cart-info">
+      <div class="cart-title">ルーティンに追加済み</div>
+      <div class="cart-preview" id="cartPreview">まだ何も追加されていません</div>
+    </div>
+    <button class="btn-view-routine" onclick="openRoutineModal()">確認する</button>
+  </div>
+</div>
+
+<!-- ルーティンモーダル -->
+<div class="modal-overlay" id="routineModal" onclick="closeModalOutside(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📋 あなたのルーティン</div>
+    <div class="modal-sub" id="routineTotalSub">合計時間を計算中...</div>
+    <div id="routineList"></div>
+    <div class="routine-total">
+      <span>合計時間</span>
+      <span class="routine-total-time" id="totalTimeDisplay">0分</span>
+    </div>
+    <button class="btn-save-routine" onclick="saveRoutine()">このルーティンで練習を始める →</button>
+  </div>
+</div>
+
+<script>
+// ========== データ定義 ==========
+const tree = {
+  id: 'root',
+  title: '理論ライブラリ',
+  desc: '気になる理論を選んで、ルーティンを作ろう',
+  children: [
+    {
+      id: 'aim',
+      icon: '🎯',
+      iconBg: '#fff0f5',
+      title: 'エイム理論',
+      desc: '感度・置き幅・フリック・トラッキングの考え方',
+      children: [
+        {
+          id: 'aim-gap',
+          icon: '⚡',
+          iconBg: '#fff0f5',
+          title: '置き幅（ギャップトラッキング）',
+          desc: 'yayスタイルの「空白を維持する」技術',
+          children: [
+            {
+              id: 'aim-gap-yay',
+              icon: '⚡',
+              iconBg: '#fff0f5',
+              title: 'yayスタイル：空白を作って維持する',
+              time: '理論',
+              body: `yayのプレイを見ると「フリックが速い」と思われがちだが、本質は全く逆。\n\n彼がやっているのは<strong>「コーナーから数ピクセル手前にクロスヘアを固定して、相手が出てきた瞬間にすでにオンターゲットになっている」</strong>状態を作ること。\n\n▍なぜこれが強いのか\n相手がピークするとき、相手のキャラは必ずコーナーから出てくる方向に動く。その動きの軌道上にあらかじめクロスヘアを置いておけば、相手が「自分からクロスヘアに当たりにきてくれる」状態になる。\n\nフリックしてるように見えるのは、相手が動いた分だけ最小限に追従しているだけ。自分から大きく動かす必要がない。\n\n▍具体的な置き方\nコーナーの端から体の横幅の半分〜1体分外側にクロスヘアを固定。近づきすぎると相手が見えた瞬間に遅れる。遠すぎると大きなフリックが必要になる。「ちょうど見えるか見えないか」のラインが理想。\n\n▍なぜプラチナ帯で差が出るか\nP帯のほとんどの人は「相手が見えてから反応してフリックする」。yayスタイルは「相手が見える前に準備が完了している」。この差が打ち合い時間にして0.1〜0.2秒の差を生む。それが勝敗を分ける。`,
+              tip: 'デスマッチで最初の5分は「キルを取る」より「コーナーに近づく前に必ず置いてから出る」だけを繰り返す。KDが下がっても気にしない。これを身体に染み込ませることが目的。',
+              addLabel: '置き幅の理解をルーティンに追加',
+              addItem: { icon: '⚡', text: 'デスマッチ：置き幅意識（コーナー手前に置いてから曲がる）', time: 15 }
+            },
+            {
+              id: 'aim-gap-kovaaks',
+              icon: '🎯',
+              iconBg: '#f0f5ff',
+              title: 'Kovaak\'s：Poke Tracking',
+              time: '10分',
+              body: `置き幅トラッキングを鍛えるのに最も実戦に直結するシナリオ。\n\n▍なぜPoke Trackingが有効か\nこのシナリオはターゲットが壁の後ろから「チラ見」してくる動きを模倣している。まさにValorantのピーク場面と同じ構造。「見えた瞬間に反応する」ではなく、「見える前に置いておいて当てる」感覚を鍛えられる。\n\n▍正しい練習方法\n・スコアを追わない。最初の1週間は感覚の構築が目的\n・「クロスヘアがターゲットの少し手前にある状態」をキープする意識で\n・ターゲットが動き出してから追いかけるのはNG。動き出す前に予測して置く\n・セッション終わりに「どう感じたか」を言語化する（「今日は追いすぎた」など）\n\n▍他のシナリオとの比較\nGridshot：反射速度のトレーニング。実戦への直結度は低め\nValorant Sphere Tracking：追従の滑らかさを鍛える。P Trackingと組み合わせると最強\nPoke Tracking：置き幅の「固定と待ち」を鍛える。実戦で最も再現性が高い`,
+              tip: '毎日スコアを記録しておく。上がらない日があっても焦らない。3〜5日単位で見ると必ず伸びている。スコアの停滞は感覚が整理されているサイン。',
+              addLabel: 'Poke Trackingをルーティンに追加',
+              addItem: { icon: '🎯', text: 'Kovaak\'s：Poke Tracking', time: 10 }
+            },
+            {
+              id: 'aim-gap-reactive',
+              icon: '🎯',
+              iconBg: '#f0f5ff',
+              title: 'Kovaak\'s：Reactive Clicking',
+              time: '10分',
+              body: `置き幅の「待ち」だけでは対応できない場面——相手が予想外の動きをした瞬間に即座に修正する能力を鍛える。\n\n▍Poke Trackingとの違い\nPoke Tracking：ターゲットの動きを予測して待つ（攻め側のピーク対策）\nReactive Clicking：ターゲットが突然出てきたときに反射的に当てる（不意打ちへの対応）\n\nこの2つは表と裏の関係。両方できると「読み通りのピーク」にも「読み外れのピーク」にも対応できる。\n\n▍セッションの組み方\nPoke Tracking 10分 → Reactive Clicking 10分 の順番がベスト。先に「待つ」感覚を作ってから「反応する」感覚を重ねる。逆にすると焦りが出て両方の質が下がる。\n\n▍上達の目安\nReactive Clickingで安定してくると、試合中の「相手に抜かれた」場面でパニックしなくなる。不意を突かれた後の立て直しが早くなるのを体感できるはず。`,
+              tip: '慣れてきたら Valorant Sphere Tracking も週2〜3で追加。「追従の滑らかさ」が上がりクロスヘアがターゲットから離れにくくなる。3種類を20〜30分でこなすのが上級者の基本セット。',
+              addLabel: 'Reactive Clickingをルーティンに追加',
+              addItem: { icon: '🎯', text: 'Kovaak\'s：Reactive Clicking', time: 10 }
+            }
+          ]
+        },
+        {
+          id: 'aim-crosshair',
+          icon: '👁️',
+          iconBg: '#f0fff5',
+          title: 'クロスヘアプレイスメント',
+          desc: '頭の高さをキープする習慣づけ',
+          children: [
+            {
+              id: 'aim-crosshair-basics',
+              icon: '👁️',
+              iconBg: '#f0fff5',
+              title: '頭の高さを常に維持する',
+              time: '理論',
+              body: `エイムトレーニングより先に直すべき最重要習慣。どんな高い感度・どんな良いKovaak'sスコアも、これができていないと台無しになる。\n\n▍なぜ頭の高さが重要か\nキャラクターの頭はキルに直結する部位（HS=ワンショットキル）。クロスヘアが地面や胴体を向いていると、相手を見てから「上げる」動作が必要になる。この0.1〜0.2秒が打ち合いの勝敗を分ける。\n\n▍正しい高さの基準\n「このコーナーに人が立っていたら頭はどこにあるか」を常にイメージする。壁から離れるほど頭の見える位置は変わるため、歩きながらクロスヘアの高さも微妙に調整し続けるのが理想。\n\n▍よくある間違い\n・坂道や段差で高さを調整しない（マップの地形に合わせる必要がある）\n・遠い敵に集中して、近い敵へのクロスヘアが下がる\n・移動中にクロスヘアが下がる（移動中も維持する意識が必要）\n\n▍上達サイン\nデスマッチで「撃ち合いに勝てた」より「クロスヘアが最初から頭の近くにあった」と感じる場面が増えたら正しい方向に進んでいる。`,
+              tip: 'デスマッチで最初の5分は「キルを取ることを完全に忘れて」クロスヘアの高さだけを意識する。KDが0でもいい。高さの意識が染み付いたら自然にKDも上がる。',
+              addLabel: 'クロスヘア高さ練習をルーティンに追加',
+              addItem: { icon: '👁️', text: 'デスマッチ：クロスヘアを頭の高さに意識（キルは気にしない）', time: 10 }
+            },
+            {
+              id: 'aim-crosshair-corner',
+              icon: '🏠',
+              iconBg: '#f0fff5',
+              title: 'コーナー前に置いてから曲がる',
+              time: '習慣',
+              body: `クロスヘアプレイスメントの中で、実戦で最も効果が出やすいスキル。練習時間に対するリターンが最も高い。\n\n▍コーナー処理の2つのアプローチ\n<strong>悪いアプローチ（初心者）</strong>：コーナーに近づいて、見えたらフリックして当てようとする。見えてからのフリックはほぼ負け確定。相手はすでにADSを合わせて待っている。\n\n<strong>正しいアプローチ（上級者）</strong>：コーナーに向かいながら、その奥に人が立っているとしたら頭がある位置（壁から少し離れた頭の高さ）にクロスヘアを合わせてから曲がる。\n\n▍「コーナーから離れて曲がる」の原則\nコーナーに密着して曲がると視認が遅くなる。壁から1〜1.5キャラ分離れることで相手が早く見える。早く見える＝先にトリガーを引ける。\n\n▍止まってから曲がる理由\n動きながら曲がると：精度が落ちる＋クロスヘアが安定しない。止まることで一発目の精度が最大になる。「止まる→合わせる→動く」の順番。\n\n▍プラチナとダイヤの差がここにある\nP帯：コーナーに突進して見えてからフリック→負ける\nD帯：コーナー手前で止まり、頭の高さを合わせてから慎重に視界を開く→先に見て先に撃てる\n\n▍練習方法\nデスマッチで死亡したとき、「コーナーから出てきた相手に先にやられた？」を確認する。そうなら自分のクロスヘアが間違った位置にあった証拠。`,
+              tip: '各マップの主要コーナー（Aショート、Bサイト入口など）で意識するだけでいい。全部のコーナーを同時に直す必要はない。1箇所マスターしたら次へ。',
+              addLabel: 'コーナー練習をルーティンに追加',
+              addItem: { icon: '🏠', text: 'デスマッチ：コーナー前に置いてから曲がる意識で動く', time: 15 }
+            }
+          ]
+        },
+        {
+          id: 'aim-sens',
+          icon: '🖱️',
+          iconBg: '#f5f0ff',
+          title: '感度設定',
+          desc: 'eDPIと筋肉記憶の正しい考え方',
+          children: [
+            {
+              id: 'aim-sens-edpi',
+              icon: '🖱️',
+              iconBg: '#f5f0ff',
+              title: 'eDPIを計算して範囲に入れる',
+              time: '確認',
+              body: `感度はただの数字ではなく「どれだけマウスを動かせば視点が動くか」の物理的な比率。これが自分の体格・手の大きさ・マウスパッドのサイズに合っていないと、どれだけ練習しても筋肉記憶が作れない。\n\n▍eDPIの計算方法\neDPI = DPI（マウスの設定） × ゲーム内感度\n例：800DPI × 0.32 = eDPI 256\n\n▍プロの数字\n全プロの平均eDPI：約235〜245\nTenZ：800DPI × 0.408 = eDPI 326（やや高め）\nCryo：800DPI × 0.28 = eDPI 224（標準的）\nwrongedge：400DPI × 0.68 = eDPI 272\n\nプロでも200〜350の幅がある。「正解の数字」は存在しない。ただし極端に外れている場合は問題が起きやすい。\n\n▍高すぎる感度の問題（eDPI 400以上）\n微細な照準調整が難しい。クロスヘアがぶれやすい。置き幅の維持が特に難しくなる。\n\n▍低すぎる感度の問題（eDPI 100以下）\n急な方向転換が難しい。近距離の素早い追従ができない。マウスパッドが小さい場合は特に問題になる。\n\n▍変えるなら一気に変えない\n現在eDPI 400の場合、いきなり240にすると全てがズレる。2〜4週間かけて少しずつ下げる（400→350→300→250）方が筋肉記憶への影響が少ない。`,
+              tip: '「この感度合わない気がする」は9割「慣れていないだけ」。変えるなら理由を明確にして、変えた後は最低2週間固定する。日によって変えるのが最もNG。',
+              addLabel: 'eDPIチェックをルーティンに追加',
+              addItem: { icon: '🖱️', text: 'eDPIを計算して記録する（DPI×感度、目標235〜245）', time: 5 }
+            },
+            {
+              id: 'aim-sens-180',
+              icon: '↔️',
+              iconBg: '#f5f0ff',
+              title: '180度テストで確認',
+              time: '5分',
+              body: `▍180度テストとは\nマウスパッドの左端から右端まで一気に振ったとき、視点がちょうど180度回転するかどうかを確認するテスト。主に感度が「大きく外れていないか」をチェックするための方法。\n\n▍結果の解釈\n<strong>振りすぎる（270度以上回る）</strong>：感度が高すぎる可能性。微細な照準が難しくなっている。\n<strong>ちょうど180度</strong>：教科書通りの設定。ただし正解ではない。\n<strong>90度しか回らない</strong>：低感度か、マウスパッドが小さすぎる。急な方向転換で不利。\n\n▍このテストの限界\n180度ぴったりが正解ではない。プロ選手も120度〜300度の幅がある。このテストは「明らかにおかしい設定ではないか」を確認する目的で使う。\n\n▍感度を変えるときの判断基準（重要）\n以下の症状があるときだけ変える：\n1. eDPI計算で200未満または400超え\n2. 1ヶ月以上練習してもフリックが毎回大きく外れる\n3. 感度を変えて2週間固定した後も改善しない\n\n「なんか合わない気がする」は95%慣れていないだけ。感度を日ごとに変えるのが最も上達を遅らせる行動。\n\n▍固定のルール\n感度を決めたら<strong>最低4週間は変えない</strong>。変えたくなった衝動は「今日調子が悪い」のサインである場合が多い。`,
+              tip: '「毎試合同じ感度で続ける」ことが感度に関して最も重要なこと。テストは確認のためであって、変える理由を探すためではない。',
+              addLabel: '180度テストをルーティンに追加',
+              addItem: { icon: '↔️', text: '180度テストで感度確認（週1でOK）', time: 5 }
+            }
+          ]
+        },
+        {
+          id: 'aim-microflick',
+          icon: '⚡',
+          iconBg: '#fffbf0',
+          title: 'マイクロフリック',
+          desc: '微小な距離を素早く正確に当てる技術',
+          children: [
+            {
+              id: 'aim-microflick-kovaaks',
+              icon: '⚡',
+              iconBg: '#fffbf0',
+              title: 'Kovaak\'s：Reflex Micro Flick',
+              time: '10分',
+              body: `エイムの「仕上げ」にあたる技術。置き幅がほぼ正確でも、最後のコンマ数ミリのズレを修正できるかどうかが高ランクとの差。\n\n▍マイクロフリックとは\n「大きくフリックして当てる」ではなく、すでにほぼ合っているクロスヘアを「ミリ単位で即座に補正する」技術。yayのプレイでいうと、置き幅でほぼ合わせた後の最後のコンマ数ピクセルの修正がこれ。\n\n▍なぜ必要か\n置き幅で待っていても相手は完璧な位置に出てくるとは限らない。予想より少し外れた位置に出てきたとき、大きなフリックでは行き過ぎる。微小な修正が必要。\n\n▍正しい練習意識\n「速く動かす」ではなく「正確に止める」が目的。クロスヘアをターゲットに近づけたとき、行き過ぎずにピタッと止められるかどうかを意識する。\n\n▍3シナリオの役割分担\nPoke Tracking：待つ精度を上げる\nReactive Clicking：反応速度を上げる  \nReflex Micro Flick：補正精度を上げる\nこの3つで30分が「完結したエイムセット」になる。`,
+              tip: '焦って速くやろうとしない。遅くても「止まるべき場所でピタッと止まる」感覚を優先する。速さは後からついてくる。',
+              addLabel: 'Reflex Micro Flickをルーティンに追加',
+              addItem: { icon: '⚡', text: 'Kovaak\'s：Reflex Micro Flick', time: 10 }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'movement',
+      icon: '🏃',
+      iconBg: '#f0fff5',
+      title: '立ち回り理論',
+      desc: 'ピーク・ポジション・アビリティの考え方',
+      children: [
+        {
+          id: 'movement-peek',
+          icon: '👁️',
+          iconBg: '#f0fff5',
+          title: 'ピーク理論',
+          desc: '「見えてから反応」をやめる',
+          children: [
+            {
+              id: 'movement-peek-timing',
+              icon: '⏱️',
+              iconBg: '#f0fff5',
+              title: '見える前に置いてから動く',
+              time: '理論',
+              body: `プラチナ帯で最も多い死因の一つが「タイミングの悪い積極的ピーク」。自分では「積極的にプレイしている」と思っているが、実際は「情報なしで飛び込んでいる」状態。\n\n▍ピークの2種類\n<strong>能動ピーク（悪い例）</strong>：何も確認せずに自分からコーナーに出ていく。相手が待ち構えていれば負け確定。\n<strong>反応ピーク（良い例）</strong>：相手の足音・アビリティ音・チームメイトの情報を受けてから動く。相手の位置が読めた状態でピークする。\n\n▍ピークするべき条件\n以下のいずれかが揃っているときだけ積極的にピークする：\n1. 相手の足音が聞こえて位置が特定できている\n2. チームメイトが別の角度から圧をかけている（相手の視線が分散している）\n3. アビリティで相手の視線を切っている（スモーク・フラッシュ後）\n4. 数的有利な状況\n\n▍プラチナとダイヤの最大の差\nP帯：ラウンド序盤に何も確認せずにピークして死ぬ（ラウンド開始10〜15秒で死亡）\nD帯：情報が揃うまで無理にピークしない。有利な状況を作ってから動く。\n\n「待つのが弱い」ではない。「良いタイミングを作るために待っている」のがダイヤのプレイ。`,
+              tip: '試合後に死亡シーンを3つだけ見て「これは有利な状況でのピークだったか」を確認する。3試合続けると自分のピーク癖が見えてくる。',
+              addLabel: 'ピーク確認をルーティンに追加',
+              addItem: { icon: '⏱️', text: '試合後：自分からピークして死んだ回数をカウント', time: 3 }
+            },
+            {
+              id: 'movement-peek-jiggle',
+              icon: '🔄',
+              iconBg: '#f0fff5',
+              title: 'ジグルピーク（最安全な情報収集）',
+              time: '習慣',
+              body: `ジグルピークはValorantで最もリスクの低い情報収集方法。完全に出るのではなく「少しだけ出て即戻る」。\n\n▍ジグルピークの目的\n1. 相手がその角度を守っているか確認する\n2. オペレーター持ちのショットを誘わせる（撃ったら装填中にエントリーできる）\n3. 相手にユーティリティ（フラッシュ・スモーク）を使わせる\n4. 情報をチームに共有する\n\n▍やり方\n1. カバーのすぐ横に立つ\n2. 少しだけ（体の半分程度）出る\n3. 即座に戻る\n4. 見えた情報をコールする\n\n▍ジグルピークの鉄則\n<strong>同じタイミングで繰り返さない</strong>。1回目：すぐ出る。2回目：少し待ってから出る。3回目：さらに間隔を変える。同じリズムで繰り返すと相手が予測して待ち構える。\n\n▍ジグルピークとワイドスウィングの使い分け\nジグルピーク：情報収集・オペターン誘い・リスク回避\nワイドスウィング：エントリー・チームメイトのトレードサポート\n\n情報がない段階でワイドスウィングするのは「無計画な特攻」。まずジグルで情報を取ってから判断する。\n\n▍プラチナとダイヤの使い方の差\nP帯：情報なしでいきなりワイドスウィング→撃ち負ける\nD帯：まずジグルで情報→オペターンを誘う→エントリー。情報コストゼロで有利な状況を作る`,
+              tip: 'デスマッチで「全部ジグルピークしてから決断する」を1試合の目標にする。情報なしでワイドスウィングした回数ゼロを目指す。',
+              addLabel: 'ジグルピーク習慣をルーティンに追加',
+              addItem: { icon: '🔄', text: '試合：エントリー前にジグルピークで1回情報を取る', time: 0 }
+            },
+            {
+              id: 'movement-peek-wide',
+              icon: '↗️',
+              iconBg: '#f0fff5',
+              title: 'ワイドスウィング・サイレントピーク',
+              time: '理論',
+              body: `ジグルで情報が取れたら、次の一手を選ぶ。\n\n▍ワイドスウィング（Wide Swing）\n守り側が期待している角度から大きく外れた場所から出ること。相手のクロスヘアが向いていた場所と別の場所から出るため、<strong>クロスヘアの調整時間が生まれ、その間に撃てる</strong>。\n\n使う条件：\n1. ジグルで相手の位置が特定できている\n2. フラッシュ・チームメイトのサポートがある\n3. 1対1が確定している角度（複数人がいると危険）\n\n<strong>ワイドスウィングでやってはいけないこと</strong>\n・情報なしでワイドスウィング（運ゲーになる）\n・同じ角度に2回連続でワイドスウィング（2回目は読まれる）\n・1人で複数の守り手がいる角度にワイドスウィング\n\n▍サイレントピーク（Silent Peek）\nシフトキーで歩きながらゆっくり出るピーク。音がほぼしないため相手が気づきにくい。\n\n使う条件：\n1. 相手がローテーション中（マップを移動中）\n2. 相手がミニマップや別のことに集中していると予測できる\n3. 奇襲タイミングを作りたいとき\n\n<strong>注意点</strong>：すでに相手が角度を守っている状態でサイレントピークすると、ゆっくり出た分だけ不利になる。あくまで「相手が見ていない」とき専用。`,
+              tip: 'ワイドスウィング後に「相手のクロスヘアがズレていたか」を振り返る。ズレていた→成功。ズレていなかった→情報が足りなかったか、タイミングが読まれていた。',
+              addLabel: 'ピーク判断をルーティンに追加',
+              addItem: { icon: '↗️', text: '試合後：ワイドスウィングした理由（情報あり/なし）を確認', time: 3 }
+            }
+          ]
+        },
+        {
+          id: 'movement-util',
+          icon: '💥',
+          iconBg: '#fff0f5',
+          title: 'アビリティ管理',
+          desc: '「キルのため」じゃなく「生き残るため」に使う',
+          children: [
+            {
+              id: 'movement-util-theory',
+              icon: '💥',
+              iconBg: '#fff0f5',
+              title: 'ピーク前にアビリティを使い切る',
+              time: '習慣',
+              body: `アビリティの使い方に対する考え方を根本から変える必要がある。\n\n▍多くの人の間違った思考\n「アビリティは強力なキルシーンのために取っておく」\n「使ったら次のラウンドまでないから勿体ない」\n「フラッシュは相手を確実に盲目にできるときだけ使う」\n\n▍プロの正しい思考\n「アビリティはリスクを下げるための道具。危険な場所に入る前に使い切る」\n「アビリティを持ったまま死ぬ＝ラウンドもアビリティも両方失う最悪の結果」\n「フラッシュは相手の視線を一時的に切るだけでいい。完璧なフラッシュである必要はない」\n\n▍エージェント別の考え方\nジェット：アップドラフトは「逃げ」ではなく「安全な角度確保」に使う。ダッシュはトレード用ではなくリセット用に\nレイナ：ディスミスはキルを取ってから使うではなく、不利な状況から逃げるために温存\nオーメン：スモークは「なんとなく炊く」より「相手の視線をここだけ切る」という明確な目的で\n\n▍数字で見るアビリティの価値\nフラッシュ1つのコスト：200クレジット\nスモーク1つのコスト：100〜200クレジット\nアビリティ使わずに死んだラウンド：500〜800クレジット分のコストをラウンドのチャンスごと失った計算になる`,
+              tip: '試合前に「今日はアビリティを使い切ってから死ぬ」を1つのルールとして設定する。ラウンドの最後にアビリティが残っていたら「失敗」と定義する。',
+              addLabel: 'アビリティチェックをルーティンに追加',
+              addItem: { icon: '💥', text: '試合後：アビリティ残ったまま死んだ回数を確認', time: 2 }
+            }
+          ]
+        },
+        {
+          id: 'movement-micro',
+          icon: '⚙️',
+          iconBg: '#e8f5e9',
+          title: 'ミクロムーブメント',
+          desc: 'デッドゾーン・ストレイフ・タップ射撃の科学',
+          children: [
+            {
+              id: 'movement-deadzone',
+              icon: '🎯',
+              iconBg: '#e8f5e9',
+              title: 'デッドゾーニング（最高峰の射撃技術）',
+              time: '理論',
+              body: `Radiantプレイヤーが「動き続けているのに弾が当たる」ように見える理由。これが<strong>デッドゾーニング</strong>。\n\n▍原理\nValorantの精度は「移動速度」に連動している。移動中は精度が最悪、止まると精度が最高。しかしAキー（左移動）からDキー（右移動）に切り替える瞬間、<strong>速度が0.00になる約150〜200msのウィンドウ</strong>が存在する。\n\nデッドゾーニング＝その「ゼロ速度の瞬間」に撃つ技術。動き続けながら完全精度で撃てる。\n\n▍カウンターストレイフとの違い\nカウンターストレイフ：完全に止まって撃つ（静止ターゲットになる）\nデッドゾーニング：止まらずに方向転換の瞬間だけ撃つ（常に動いている状態）\n\nカウンターストレイフは「止まって精度を出す」。デッドゾーニングは「動きながら精度を出す」。\n\n▍入力の順番（超重要）\n1. Aキーを押す（左移動中）\n2. Aキーを離す\n3. ← <strong>この瞬間に撃つ</strong>（速度ゼロのウィンドウ）\n4. Dキーを押す（右移動へ）\n\nDキーを押してから撃つと「Dで移動中」になって精度が落ちる。Dを押す<strong>前</strong>の「何も押していない瞬間」に撃つ。\n\n▍なぜこれが強いか\n止まっている間は相手にとってフリーのターゲット。デッドゾーニングができると「撃たれているのに相手には当たらない、しかし自分の弾は当たる」状態が作れる。\n\n▍2026年のハードウェア事情\nWooting・Razer Huntsman V3などの「ラピッドトリガー」キーボードはこのウィンドウを大幅に広げる。指を0.1mm持ち上げた瞬間にキーがリセットされるため、ゼロ速度に入るタイミングが格段に精確になる。`,
+              tip: 'レンジで壁に1発ずつ撃って弾痕を確認する練習。A→離す→撃つ→Dのリズムで弾痕が1点に集まったらデッドゾーニングが機能している。広がったら撃つタイミングが早すぎ/遅すぎ。',
+              addLabel: 'デッドゾーニング練習をルーティンに追加',
+              addItem: { icon: '🎯', text: 'レンジ：A離す瞬間に撃つデッドゾーン練習（15分）', time: 15 }
+            },
+            {
+              id: 'movement-strafe-burst',
+              icon: '🔁',
+              iconBg: '#e8f5e9',
+              title: 'ストレイフ→止まる→バーストのリズム',
+              time: '習慣',
+              body: `ミクロムーブメントの基本ループ。これを体に染み込ませるだけで「動きながらも当たる」プレイスタイルになる。\n\n▍基本ループ\n<strong>ストレイフ → 止まる（デッドゾーン） → バースト → またストレイフ</strong>\n\nこのサイクルを繰り返す。撃っている時間より動いている時間が長い。\n\n▍撃つ発数は距離で変える\n近距離（5m以内）：3〜5発のスプレー。止まる時間を少し長く。\n中距離（5〜20m）：2〜3発のバースト。止まる時間は最小限。\n遠距離（20m以上）：1発タップ。1発撃つたびにリセットして次のデッドゾーンに入る。\n\n▍「止まる時間」の最適化\n止まる時間は「正確な弾を出す最低限の時間」。2〜4発で勝負が決まるなら2発分だけ止まる。長く止まるほど相手に当てやすいターゲットになる。\n\n▍よくある失敗\n移動しながらスプレーする（動いているので弾がバラバラ）\n止まったまま連射し続ける（静止ターゲットになって相手から当てやすい）\nバーストした後にまた動かない（次のストレイフを始めるのが遅い）\n\n▍クラッチやコンペでのリズム崩れを防ぐ方法\nプレッシャーが高い場面でこのリズムが崩れる（焦って動きながら撃つ）。それを防ぐには、プレッシャーの低いデスマッチで毎日練習してリズムを「無意識化」する。`,
+              tip: 'デスマッチの最初の10分を「バースト→移動→バースト→移動のリズムを守る」だけに使う。KDは一切気にしない。リズムが守れたかどうかだけ評価する。',
+              addLabel: 'バーストリズム練習をルーティンに追加',
+              addItem: { icon: '🔁', text: 'デスマッチ：ストレイフ→止まる→バーストのリズムで動く', time: 15 }
+            },
+            {
+              id: 'movement-strafe-length',
+              icon: '📏',
+              iconBg: '#e8f5e9',
+              title: 'ストレイフ幅の使い分け（マイクロ vs ロング）',
+              time: '理論',
+              body: `「どれだけ動けば相手から当てにくくなるか」——これがストレイフ幅の科学。\n\n▍マイクロストレイフ（小さい動き）\n使う場面：カバー際・コーナー横・タイトな角度を守るとき\n効果：カバーから出る量を最小限に抑えながら微妙に頭の位置を変える。相手のクロスヘアにずっと居続けることを防ぐ。\n距離：0.5〜1キャラ分の横移動\n\n使い方：コーナーを守っているとき、完全に止まらずに微妙に左右に体を揺らす。この「わずかな揺れ」だけで相手がプリエイムをするのが難しくなる。\n\n▍ロングストレイフ（大きい動き）\n使う場面：ワイドスウィング・スモーク越しのスパム回避・オペターンを外したいとき\n効果：相手のクロスヘアが全く違う場所に向いている間に大きく位置を変える。\n距離：2〜4キャラ分の横移動\n\nリスク：ロングストレイフは体が大きく露出するため、複数の角度から撃たれるリスクがある。単一の守り手がいることが確認できているときに限る。\n\n▍「どれくらい動けば当てにくいか」の実感\n試合中に自分が守り側のとき、ロングストレイフしてきた相手に「追いかけられなかった」経験があるはず。それがストレイフの効果。攻め側のときは自分がそれをやる。\n\n▍タップ射撃とストレイフの組み合わせ\nデッドゾーンで1発→マイクロストレイフ→デッドゾーンで1発→マイクロストレイフ\nこれが最も効率的な「当てつつ当てられない」のループ。遠距離では特にこの1発タップ×ストレイフが強力。`,
+              tip: 'マイクロストレイフをまず覚える。「完全に止まるより、少し揺れながらの方が相手から当てにくい」感覚がつかめると使い方が見えてくる。',
+              addLabel: 'ストレイフ幅練習をルーティンに追加',
+              addItem: { icon: '📏', text: 'デスマッチ：マイクロストレイフ（微妙な揺れ）しながらタップ射撃', time: 10 }
+            }
+          ]
+        },
+        {
+          id: 'movement-position',
+          icon: '🏠',
+          iconBg: '#f5f0ff',
+          title: 'ポジション管理（ジェット向け）',
+          desc: '同じ場所に3ラウンド以上いない',
+          children: [
+            {
+              id: 'movement-position-jett',
+              icon: '⚡',
+              iconBg: '#f5f0ff',
+              title: 'ジェットの機動力を活かす',
+              time: '習慣',
+              body: `ジェットはValorant最強の機動力を持つエージェント。しかしほとんどのプラチナ帯ジェットは「ダッシュでキルを取るキャラ」として使っていて、機動力の本当の使い方を理解していない。\n\n▍ジェットの機動力の正しい用途\n<strong>アップドラフト（上昇）</strong>：キルを取るためでなく、「相手が対応していない高さの角度を作る」ために使う。コンテナの上、壁の隙間など通常の高さでは見えない角度から先にプレッシャーをかける。\n\n<strong>ダッシュ（短距離移動）</strong>：「突っ込む」ためではなく「リセット（危険な状況から離脱）」のために温存する。ダッシュが残っていれば、不利なトレードからも脱出できる。\n\n▍ポジション変えのルール\n同じ守りポジションに3ラウンドいると、相手は「ここにいる」と確信して準備してくる。スモーク・フラッシュ・2人で詰める——全部対策されて死ぬ。\n2ラウンドで同じ場所を使ったら次は変える。\n\n▍ジェット向けポジション発想\n通常のエージェントが取れない角度を取る。アップドラフトで上に行ける場所、ダッシュで素早く移動できる短い距離の移動先。相手の意識の外から撃てる場所を常に探す。\n\n▍やってはいけないこと\nダッシュをキルを取るためのエンゲージに使う→ダッシュ後にリセットできず死ぬ\nアップドラフトをラウンド終盤まで取っておく→ダッシュ同様、温存したまま死ぬ\n毎ラウンド同じ場所→相手に「この角度にジェットがいる」が確定される`,
+              tip: 'ダッシュは「逃げるための保険」として使う意識を持つ。ダッシュで突っ込むのはキルが確定しているときだけ。',
+              addLabel: 'ポジション変え意識をルーティンに追加',
+              addItem: { icon: '⚡', text: '試合：毎ラウンド前のラウンドと違う場所に立つ（ジェット）', time: 0 }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'macro',
+      icon: '🗺️',
+      iconBg: '#f0f5ff',
+      title: 'マクロ理論',
+      desc: 'サイト攻め・守り・ローテーションの考え方',
+      children: [
+        {
+          id: 'macro-attack',
+          icon: '⚔️',
+          iconBg: '#f0f5ff',
+          title: 'サイト攻め',
+          desc: '情報をとってから入る',
+          children: [
+            {
+              id: 'macro-attack-info',
+              icon: '📡',
+              iconBg: '#f0f5ff',
+              title: 'スモーク→フラッシュ→エントリーの順番',
+              time: '習慣',
+              body: `「5人で突っ込めばサイトを取れる」は完全な誤解。5人が一直線に入れば1人が2〜3キルする守り側に全員狩られる。\n\n▍正しいサイト攻めの構造\nサイト攻めは段階的なリスク管理。各ステップにはっきりした目的がある。\n\n<strong>STEP 1：情報収集（エントリー前）</strong>\nリコン（サイファー）・ドローン（KAY/O）・フラッシュの跳ね返り音で相手の人数と位置を確認。「何人いるか」「どこにいるか」が分かってからSTEP 2へ。\n\n<strong>STEP 2：視線を切る（スモーク）</strong>\n守り側が見ている角度にスモーク。全てを隠す必要はない。サイトに入る経路上の1〜2箇所の視線だけ切れれば十分。\n\n<strong>STEP 3：動きを止める（フラッシュ）</strong>\nスモーク直後にフラッシュを投げる。相手が盲目になる時間＝エントリーの時間。完璧なフラッシュである必要はない。「ちょっとでも視界を奪う」だけでいい。\n\n<strong>STEP 4：エントリー</strong>\nフラッシュが開いた瞬間に入る。止まらずに動き続ける（止まると当てられやすい）。\n\n▍プラチナ帯の典型的な失敗パターン\n・スモークもフラッシュもなしに5人で走り込む\n・エントリーが怖くて全員がコーナー前で止まる\n・スモークは炊いたがフラッシュを入れずに入る→スモーク外から撃たれる\n\n▍チームがバラバラでもできること\n自分ができることは「入る前に一つでも情報を取る」こと。リコンボルト・ドローンがなければフラッシュを先に投げてから入る。それだけでも生存率が変わる。`,
+              tip: 'ラウンド後に「何の準備もなしにサイトに入ったか」を確認する。情報0でのエントリーを月に何回やったかカウントすると自分のパターンが見える。',
+              addLabel: '攻め確認をルーティンに追加',
+              addItem: { icon: '⚔️', text: '試合後：情報なしでサイトに入った回数を確認', time: 2 }
+            }
+          ]
+        },
+        {
+          id: 'macro-defense',
+          icon: '🛡️',
+          iconBg: '#fff0f0',
+          title: 'サイト守り',
+          desc: 'クロスファイアとポジション変えが核心',
+          children: [
+            {
+              id: 'macro-defense-cross',
+              icon: '✕',
+              iconBg: '#fff0f0',
+              title: 'クロスファイアで守る',
+              time: '習慣',
+              body: `守りで2人が同じ角度を見ている状況は、実質1人で守っているのと変わらない。相手は1人を処理すれば両方突破できる。\n\n▍クロスファイアの原理\n2人が<strong>別々の角度から同じポイントに視線を向ける</strong>ことで、相手は片方を見たら片方から撃たれる状態になる。どちらを優先するか迷う間に両方からダメージを受ける。\n\n▍具体例（Ascent Aサイト）\nNGパターン：2人ともコンテナ前に並ぶ→相手がフラッシュ1枚で2人同時に対処できる\nOKパターン：1人がコンテナ前、1人がサイト奥（マーケット側）→コンテナに入った相手をサイト奥から取れる\n\n▍クロスファイアの設計方法\n1. 相手がサイトに入ってくる経路を想定する\n2. その経路を2つの異なる角度から交差させる\n3. 1人が撃ち始めたら、もう1人は相手の視線が向いた間に動く\n\n▍ソロでもできること\n自分以外のチームメイトがどこにいるか確認する。チームメイトがコンテナ前にいるなら自分はサイト奥へ。同じ場所に固まらない選択をするだけでクロスファイアは成立する。\n\n▍クロスファイアの副次効果\n相手はどちらを先に処理するか迷う→判断が遅れる→どちらかがキルを取れる可能性が上がる。クロスファイアは「2人で守るより強い」ではなく「2人の力を2倍以上に増幅する」仕組み。`,
+              tip: '「チームメイトがいる場所と違う角度を取る」だけでいい。完璧なクロスファイアじゃなくても、かぶらないだけで効果がある。',
+              addLabel: 'クロスファイア意識をルーティンに追加',
+              addItem: { icon: '✕', text: '試合：チームメイトと角度がかぶらない場所を意識する', time: 0 }
+            },
+            {
+              id: 'macro-defense-rotate',
+              icon: '🔄',
+              iconBg: '#fff0f0',
+              title: '2〜3ラウンドごとにポジション変え',
+              time: '習慣',
+              body: `▍相手がポジションを読む仕組み\nValorantの攻め側は毎ラウンド守り側のポジションを学習している。ラウンド1でAショートにいたなら、ラウンド2では「Aショートに誰かいる」と警戒して入ってくる。3ラウンド連続で同じ場所にいると、相手は確信を持って対策（スモーク・フラッシュ・2人で詰める）を準備してくる。\n\n▍ポジション変えの2つのレベル\n<strong>エリアを変える</strong>：Aサイト守りからBサイト守りへ（チームの状況次第）\n<strong>角度だけ変える</strong>：Aサイト内でも奥角→手前角→高い場所など。同じエリアでも角度が変わるだけで相手の対策が全て外れる\n\n▍変えるべきタイミング\n同じポジションで2ラウンド連続でキルを取れた→次のラウンドは相手が対策してくる→変える\nラウンド序盤に死んだ→自分のポジションが相手にバレた可能性→次は変える\n\n▍プラチナ帯でよく見る問題\n1試合通して全く同じポジション。後半になるほど死にやすくなる。理由は相手が学習しているから。D帯以上は毎ラウンド意図的にポジションを調整している。\n\n▍ジェットなら必須\n機動力があるキャラで毎ラウンド同じ場所にいるのは最もモッタイナイ。ジェットの場合は1〜2ラウンドごとに変えるのが理想。他のエージェントでも2〜3ラウンドを目安に。`,
+              tip: '「前のラウンドで死んだ場所には次のラウンドで戻らない」これだけ守るだけで自然にポジションが変わる。',
+              addLabel: 'ポジション変えをルーティンに追加',
+              addItem: { icon: '🔄', text: '守り：2〜3ラウンドごとに角度・場所を変える', time: 0 }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'economy',
+      icon: '💰',
+      iconBg: '#f0fff5',
+      title: 'エコノミー理論',
+      desc: '1試合で3〜5ラウンド変わる最重要スキル',
+      children: [
+        {
+          id: 'eco-buy-types',
+          icon: '🛒',
+          iconBg: '#f0fff5',
+          title: 'バイフェーズの種類を理解する',
+          desc: 'フルバイ・ハーフバイ・セーブの使い分け',
+          children: [
+            {
+              id: 'eco-buy-full',
+              icon: '💎',
+              iconBg: '#f0fff5',
+              title: 'フルバイ・ハーフバイ・セーブの判断',
+              time: '理論',
+              body: `Valorantは「エイムゲーム」であると同時に「経済ゲーム」。正しいバイ判断ができるだけで、エイムが同等のチームに対して1試合で3〜5ラウンド多く勝てる。\n\n▍3種類のバイの詳細\n<strong>フルバイ（Full Buy）</strong>\n必要クレジット：3800〜4300+\n内容：ライフル（ヴァンダル/ファントム）＋ヘビーシールド＋アビリティ全購入\nタイミング：ラウンド1後のボーナスラウンド（ピストル勝利後）、またはチーム全員が3800以上持っているとき\n\n<strong>ハーフバイ（Half Buy）</strong>\n必要クレジット：1800〜2500\n内容：シェリフ（800）＋ライトシールド（400）＋一部アビリティ\n目的：フルバイより弱いが、エコラウンドより勝てる可能性がある\nタイミング：チームが「全員フルバイはできないが、エコよりは戦える」状態のとき\n\n<strong>セーブ（Full Eco）</strong>\n使うクレジット：0〜900\n内容：初期ピストル＋最低限のアビリティのみ（またはアビリティなし）\n目的：次ラウンドのフルバイに向けてクレジットを最大化する\nタイミング：チームが3人以上セーブするとき\n\n▍プラチナ帯で最も多いエコミス\nハーフバイでもフルバイでもない「2500〜3500」のバイ。ライフルが買えない中途半端な金額で買う→負ける→次もフルバイできない→連鎖崩壊\n\n▍決断の基準\n全員3800以上→フルバイ\n全員フルバイ無理→全員セーブ（次にフルバイ）\nどちらでもない→チャットで相談またはチームメイトの装備を見て合わせる`,
+              tip: 'バイフェーズの残り時間でチームメイトのクレジット数を確認する習慣をつける。3人以上がセーブなら必ず合わせる。',
+              addLabel: 'バイフェーズ確認をルーティンに追加',
+              addItem: { icon: '💰', text: 'バイフェーズ：チームメイトのクレジットを確認してから買う', time: 0 }
+            },
+            {
+              id: 'eco-pistol',
+              icon: '🔫',
+              iconBg: '#f0fff5',
+              title: 'ピストルラウンド後の戦略',
+              time: '理論',
+              body: `ピストルラウンドの結果によって、次の2〜3ラウンドの経済が決まる。ピストル直後の判断が1試合の経済の土台になる。\n\n▍ピストルラウンドに勝ったとき\n<strong>ラウンド2（ボーナスラウンド）</strong>：フルバイしない。SMG（スペクター2000・ストリンガー1600）または低コストライフルで抑える。理由：全員フルバイするとエコノミーが尽きてラウンド3でセーブになる逆転リスクがある。\n<strong>ラウンド3</strong>：ボーナスを守り切れば全員フルバイできる状態になる。2ラウンド連続リードという圧倒的有利。\n\n▍ピストルラウンドに負けたとき\n<strong>ラウンド2</strong>：強制セーブ。例外なし。負けた側がラウンド2でフルバイするのは経済崩壊のパターン。\n<strong>ラウンド3</strong>：全員フルバイ。ここで経済が回復する。「エコ→フルバイ→フルバイ」のサイクルを守る。\n\n▍「負けたからやり返す」思考が最悪な理由\nピストル負け後にラウンド2でフルバイ→また負ける→ラウンド3もセーブ必要→ラウンド4もフルバイできない→3〜4ラウンド連続でエコ状態→実質試合を投げたに等しい状態\n\n▍具体的な数字\nピストル負け後の正しいセーブ：+900〜1400クレジット積み立て\nラウンド2で正しくセーブ→ラウンド3でフルバイ（3800以上）を全員が達成できる計算になる`,
+              tip: 'ピストルラウンド後のラウンド2バイフェーズで「チームメイトが何を買っているか」確認する。バラバラなら「エコしよう」とチャットに流す。',
+              addLabel: 'ピストル後の判断をルーティンに追加',
+              addItem: { icon: '🔫', text: '試合後：ピストル後のバイが正しかったか確認', time: 2 }
+            }
+          ]
+        },
+        {
+          id: 'eco-team',
+          icon: '🤝',
+          iconBg: '#f0fff5',
+          title: 'チームエコの合わせ方',
+          desc: '「2ライフル＋3ピストル」が最悪のパターン',
+          children: [
+            {
+              id: 'eco-team-sync',
+              icon: '🔗',
+              iconBg: '#f0fff5',
+              title: 'チームで経済を合わせる',
+              time: '習慣',
+              body: `チームエコの合わせは「協力」ではなく「戦略的な火力最大化」。バラバラなバイは全員が損をする。\n\n▍なぜ合わせる必要があるのか\n5人がフルバイ：合計ライフル5本。火力が最大。\n3人フルバイ＋2人ピストル：ライフル3本。火力が60%。しかもエコの2人は先に死ぬので実質4vs5になりやすい。\nこの状態でラウンドに勝てるのは相手が大きくミスしたときだけ。\n\n▍チームエコ確認の手順\n<strong>バイフェーズ開始</strong>→チームメイトのクレジット数を右上で確認\n3人以上が3800未満→全員セーブ確定\n全員が3800以上→全員フルバイ\n2〜3人が微妙な金額→チャットで「エコ？フルバイ？」と確認\n\n▍「自分だけフルバイ」が最悪な理由\n自分だけライフルで4人がピストルラウンドに突入→自分が死んだ瞬間に戦力差が決定的になる。自分のフルバイ分のクレジットを次のラウンドに持ち越した方が全員得をした。\n\n▍現実的な実行方法\nソロキューでも「eco?」の一言でチームが合わせてくれることが多い。チャットを使うことへの抵抗を捨てる。情報共有だけで1試合のラウンド取得数が変わる。\n\n▍チームエコが機能すると起きること\n全員フルバイ→武器の火力が最大→同じエイムでも勝てる場面が増える→ラウンドを取る→次も経済が回る→好循環が生まれる`,
+              tip: 'バイフェーズで自分が先にセーブを選ぶ。先にセーブを示すことでチームメイトが合わせやすくなる。',
+              addLabel: 'チームエコ確認をルーティンに追加',
+              addItem: { icon: '🤝', text: '試合後：チームでバラバラなバイをした回数を確認', time: 2 }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'mental',
+      icon: '🧠',
+      iconBg: '#f5f0ff',
+      title: 'メンタル・一貫性',
+      desc: 'ランク上げで最も見落とされる要素',
+      children: [
+        {
+          id: 'mental-tilt',
+          icon: '😤',
+          iconBg: '#fff0f5',
+          title: 'チルト管理',
+          desc: '2連敗したら止まる。これだけでランクが変わる',
+          children: [
+            {
+              id: 'mental-tilt-rule',
+              icon: '🛑',
+              iconBg: '#fff0f5',
+              title: '2連敗ルール（絶対に守る）',
+              time: '習慣',
+              body: `これはルールではなく「科学」。チルト中の脳は文字通り機能が低下している。\n\n▍チルトが起きる仕組み\n連敗→感情が高ぶる→扁桃体（感情の中枢）が活性化→前頭前野（判断力・冷静さ）の機能が低下→「早く取り返したい」という衝動が判断を歪める→さらに判断が悪くなる→連敗が続く\n\nこれは意志の力では止められない。脳の構造上避けられない反応。\n\n▍データで見る連敗の危険性\n・2連敗後に続けたプレイヤーの3試合目勝率：約38%\n・2連敗後に30分休憩したプレイヤーの3試合目勝率：約54%\n・チルト状態のプレイヤーの判断ミス数：通常時の約2.3倍\n\n▍「あと1試合」の心理\n「あと1試合で取り返せる」という思考自体がチルトのサイン。冷静なときは「今日はここまでにしよう」と思える。「あと1試合」と思った瞬間が最もやめるべきタイミング。\n\n▍正しいリセット方法\n1. デバイスから離れる（スクリーンを見ない）\n2. 外の空気を吸う・水を飲む\n3. 「今日の試合で1つ良かった点」を思い出す\n4. 翌日は「勝ちより上達」を目的にリスタート`,
+              tip: '2連敗ルールをアプリに「今日2連敗しました。明日また頑張ります」と入力して記録しておく。続けることで自分のパターンが見える。',
+              addLabel: '2連敗ルールをルーティンに追加',
+              addItem: { icon: '🛑', text: '2連敗したら必ずそこで止める（翌日リセット）', time: 0 }
+            },
+            {
+              id: 'mental-tilt-reset',
+              icon: '🌬️',
+              iconBg: '#fff0f5',
+              title: 'ラウンド間のメンタルリセット',
+              time: '習慣',
+              body: `「前のラウンドへの後悔」または「前のラウンドへの興奮」を次のラウンドに持ち込むと、判断の質が20〜30%低下する。プロが毎ラウンド間にルーティンをこなすのはこれを防ぐため。\n\n▍ラウンド間リセットの仕組み\n人間の脳は強い感情（怒り・興奮・後悔）があるとその記憶に引きずられた判断をする。「さっきあそこで死んだから今度はここで待ってやる」という思考は感情ベースの判断であり、最適解ではないことが多い。\n\n▍30秒でできるリセット手順\n<strong>1. 視線を画面から1〜2秒外す</strong>（画面を見続けると感情がリセットされない）\n<strong>2. 鼻から深く吸って口から吐く（1回）</strong>（自律神経を落ち着かせる、本当に効果がある）\n<strong>3. あごの力を意識して抜く</strong>（チルト・興奮中は無意識に歯を食いしばっている。力が入っているほど視野が狭くなる）\n<strong>4. 「今のラウンドは今のラウンド」と1回思う</strong>（言葉にする必要はない。思うだけでいい）\n\n▍プロが実践している例\nFNS（Team Liquid）は毎ラウンド間に必ず水を飲む→物理的な行動が感情のリセットトリガーになる\nNitr0は死んだ後に声を出さず5秒待つルールを持っている→感情の発散より内側のリセットを優先\n\n▍死んだラウンドのリセット（特に重要）\n「なんであそこで死んだんだ」という思考が出た瞬間：それを一言で分類する「ピークミス」「エイムミス」「情報なし」など。分類できると感情的な後悔から客観的な分析に切り替わる。`,
+              tip: '「あごの力を抜く」これだけ試してみる。チルト中は本当に力が入っている。それを緩めるだけで次のラウンドの集中力が上がる。',
+              addLabel: 'ラウンドリセットをルーティンに追加',
+              addItem: { icon: '🌬️', text: '試合中：ラウンド間に深呼吸1回+あごの力を抜く', time: 0 }
+            }
+          ]
+        },
+        {
+          id: 'mental-consistency',
+          icon: '📅',
+          iconBg: '#f5f0ff',
+          title: '継続と一貫性',
+          desc: '週3時間より毎日30分が3倍効果的',
+          children: [
+            {
+              id: 'mental-daily',
+              icon: '🔥',
+              iconBg: '#f5f0ff',
+              title: '毎日少しずつが最強',
+              time: '理論',
+              body: `▍神経科学的な根拠\n「筋肉記憶」と呼ばれるエイムの感覚は、実際には脳内の神経回路（シナプス結合）に保存される。この回路は使うたびに強化され、使わないと弱くなる。週1で3時間練習した場合、次の週までの6日間で回路が弱化するため、毎回「思い出す」ところから始まる。毎日30分であれば回路が弱化する前に再強化できる。\n\n▍具体的な差\n週7時間の練習を「週1×7時間」でやった場合と「毎日×1時間」でやった場合：\n3ヶ月後の上達速度が「毎日組」は「週1組」の約2.5〜3倍速い（スポーツ心理学の研究より）\n\n▍「毎日できない」への反論\n「週3しか時間がない」という人でも、10〜15分のKovaak'sは現実的にできる。\n10分でできること：Poke Tracking 1本（5分）＋Reflex Micro Flick 1本（5分）\n15分でできること：上記に加えてReactive Clicking（5分）追加\nこれだけで「毎日維持」の効果が得られる。ランクマは週3でも、エイム練習は毎日少しでやる。\n\n▍上達の停滞を感じたときの対処\n「伸び悩み期（プラトー）」は必ず来る。このとき多くの人が「才能がない」と思って辞めるか、一気に練習を増やす。正解は「変えない・続ける」。プラトーは次の成長の直前に起きる現象。2〜3週間続けると突然感覚が変わる瞬間が来る。\n\n▍Kovaak'sルーティンの例（15〜30分）\nウォームアップ：Poke Tracking 5分\nメイン：Reactive Clicking 5分\n仕上げ：Reflex Micro Flick 5分\n余裕があれば試合前：カスタムゲームのレンジ 5分`,
+              tip: '忙しい日の「最低限」を決めておく。自分の場合はKovaak\'s 10分だけ。それができたらその日は合格。完璧を目指すと続かない。',
+              addLabel: '毎日練習をルーティンに追加',
+              addItem: { icon: '🔥', text: 'Kovaak\'s最低10分（忙しい日でもやる）', time: 10 }
+            },
+            {
+              id: 'mental-review',
+              icon: '📋',
+              iconBg: '#f5f0ff',
+              title: 'VODレビューの正しいやり方',
+              time: '10〜20分',
+              body: `VODレビューはプロが「練習の中で最も重要」と口を揃えて言う方法。理由は「自分が見えていないものを見ることができる」から。試合中は感情・緊張・次の行動への意識があるため、自分のミスを客観的に認識できない。\n\n▍なぜVODレビューが最も効果的か\n・自分の視点の死角が見える\n・「なんとなく負けた」が「ここでミスした」に変わる\n・理論を「自分の試合」に当てはめられる\n・感情が落ち着いた状態で客観的に見られる\n\n▍正しいVODレビューの手順（20分版）\n<strong>STEP 1（5分）：試合全体のスコアを確認</strong>\nKDA・HS率・エコノミーの状態を把握。「今日の試合は何が問題だったか」の仮説を立てる。\n\n<strong>STEP 2（10分）：死亡シーンだけを見る</strong>\nリプレイで死亡シーン（3〜5個）を再生。各シーンで3つ確認する：\n1. なぜそこにいたか（ポジション判断）\n2. なぜ撃ち負けたか（エイム・タイミング）\n3. 何があればそのラウンドを生き延びられたか\n\n<strong>STEP 3（5分）：1つだけ「次の試合で変えること」を決める</strong>\n全部変えようとすると何も変わらない。「次の試合は情報なしでのピークを絶対にしない」のような具体的なルールを1つだけ設定する。\n\n▍使えるツール\ninsights.gg：デスシーンを自動でハイライト。HS率・死因分析も可能\ntracker.gg：試合ごとのパフォーマンス比較\nValorantリプレイ：ゲーム内のキャリア→リプレイで試合を振り返れる\n\n▍週2回でいい理由\n毎試合VODレビューは疲弊して続かない。週2回（例：木曜と日曜）で十分。1ヶ月で8〜10試合分の分析が積み重なると、自分のミスのパターンが明確に見えてくる。`,
+              tip: 'リプレイを見るとき「相手がどこにいたか」を先にチェックする。自分からは見えなかった敵の位置を確認すると「そこから撃たれるのは当然だった」と理解できる。',
+              addLabel: 'VODレビューをルーティンに追加',
+              addItem: { icon: '📋', text: '週2回：死んだシーンだけ見て「なぜ死んだか」を3つ書く', time: 15 }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'communication',
+      icon: '📡',
+      iconBg: '#fffbf0',
+      title: 'コミュニケーション・情報収集',
+      desc: '情報速度がラウンドの勝敗を決める',
+      children: [
+        {
+          id: 'comm-callouts',
+          icon: '🗣️',
+          iconBg: '#fffbf0',
+          title: 'コールアウトの質を上げる',
+          desc: '「左に2人」より「Aショートに2人、1人はロング」',
+          children: [
+            {
+              id: 'comm-callouts-basics',
+              icon: '📢',
+              iconBg: '#fffbf0',
+              title: 'コールアウトは3〜5単語で完結させる',
+              time: '習慣',
+              body: `コールアウトは「連絡」ではなく「情報の武器」。適切なコールアウト1つで、チームメイトの判断速度が上がりラウンドが変わる。\n\n▍良いコールアウトの3条件\n1. <strong>場所が特定できる</strong>（マップ名・エリア名を使う）\n2. <strong>人数が分かる</strong>（何人か）\n3. <strong>付加情報がある</strong>（武器・高さ・動向）\n\nNG：「敵いる！」「左！」「後ろ！」→どこかわからない\nOK：「Aショートに1人」→場所と人数が分かる\n完璧：「Aショートに1人、ライフル持ち、コーナー前に止まってる」→次の行動を決められる\n\n▍コールアウトの速度が重要な理由\n見た瞬間に言う。3秒後に言っても相手はすでに移動している。コールが遅い情報は「使えない古い情報」になる。\n\n▍死んだ後のコールアウト（超重要）\n死んでいる間にできることがある。自分を倒した敵の位置・人数・残りHP（ダメージから推測）・武器をコールする。「Aショートのワン倒れた、あと1人いる、ローライフ」これだけで残りのチームメイトが動きやすくなる。\n\n▍マップ別覚えるべきコールアウト（最優先10箇所）\nAscent：Aショート、Aタワー、ミッド、Bメイン、Bロング\nBind：Aショート、Aロング、テレポーター、Bショート、Bロング\n他のマップも同様。「入口・出口・中央」の名前だけでも覚えれば十分機能する。\n\n▍プラチナ帯とダイヤ帯の差\nP帯：コールなし、または「後ろ！」「左！」など曖昧なコール\nD帯：場所名＋人数＋付加情報をセットでコール。ラウンド中に積極的に情報を共有`,
+              tip: 'まず今プレイするマップの「Aメイン」「Bメイン」「ミッド」の3箇所だけ覚える。これだけで試合中のコールが格段に具体的になる。',
+              addLabel: 'コールアウト練習をルーティンに追加',
+              addItem: { icon: '🗣️', text: '試合：死ぬ前に必ず位置を3〜5単語でコールする習慣', time: 0 }
+            },
+            {
+              id: 'comm-info-timing',
+              icon: '⏱️',
+              iconBg: '#fffbf0',
+              title: '情報は「得た瞬間」に共有する',
+              time: '習慣',
+              body: `情報のタイミングがラウンドの勝負を決める。遅い情報は「使えない情報」になる。\n\n▍情報が価値を持つ時間\n敵の位置を確認した瞬間：価値100%\n3秒後：価値60%（移動した可能性がある）\n10秒後：価値20%（完全に別の場所にいる可能性）\n30秒後：価値0%（試合のフェーズが変わっている）\n\n▍見た瞬間に言うべき情報\n「敵の位置」→見た瞬間にコール\n「ミッドが空いている・取られている」→動き始めた瞬間にコール\n「スモークがなくなった」→消えた瞬間にコール\n「スパイクが植えられた音」→聞こえた瞬間にコール\n\n▍情報共有の優先順位\nラウンドの重要度によって情報の価値が変わる。残り4人vs4人のラウンドと、5人vs1人のラウンドでは情報の価値が全く違う。同じコール力でも「1人生き残っている状況のコール」が最も価値が高い。\n\n▍マイクがない・英語が話せない場合\nチャットを使う。「A 2」「ミッド通過」「B植え」など短い文字でも情報として機能する。マイクなしでも情報共有はできる。\n\n▍プロが「死んだ後の情報共有」を重視する理由\n死んだ後は感情がリセットされて冷静に見られる。生きているときより客観的な情報が出せる。「Aショートで2人待ち伏せ、どちらもフルHP」このコールが1ラウンドを決める。`,
+              tip: '「死んだ後にコールする」を試合のルールとして設定する。死んだ瞬間に1つ情報を出す。これだけで試合への貢献が格段に上がる。',
+              addLabel: '情報共有習慣をルーティンに追加',
+              addItem: { icon: '⏱️', text: '試合：敵を見た瞬間・死んだ瞬間に位置をコールする', time: 0 }
+            }
+          ]
+        },
+        {
+          id: 'comm-mapcontrol',
+          icon: '🗺️',
+          iconBg: '#fffbf0',
+          title: 'マップコントロールの概念',
+          desc: 'ミッドを持つと試合が変わる',
+          children: [
+            {
+              id: 'comm-mid',
+              icon: '🏙️',
+              iconBg: '#fffbf0',
+              title: 'ミッドコントロールの重要性',
+              time: '理論',
+              body: `ミッドはValorantのほぼ全マップで「試合の主導権」を握るエリア。ミッドを制した側が常に攻守両面で優位に立つ。\n\n▍ミッドを制するとできること（攻め側）\nAサイトへのローテーション、Bサイトへのローテーション、ミッドからの奇襲——全ての選択肢が開く。守り側は「Aかも、Bかも、ミッドからかも」と3箇所を警戒しなければならず、プレッシャーが分散する。\n\n▍ミッドを制するとできること（守り側）\nミッドを持つ守りは攻め側のローテーションを見られる。「攻め側がAに集まっている」「ミッド通過した」という情報がリアルタイムでわかる。これにより守り側がどちらのサイトに寄るかを早く判断できる。\n\n▍ミッドを制するコスト\nミッドは通常、試合序盤で最も交戦が激しいエリア。取るためにアビリティを使う、数的有利で取りに行くなど「投資」が必要。ただしその投資回収率は高い。\n\n▍マップ別ミッドの重要エリア\nAscent：ミッドコートヤード（攻め側のABローテーション拠点）\nBind：テレポーター（実質的なミッドの役割）\nHaven：3サイトのため、センタースワードが特に重要\nSplit：ミッドメイル（AとBを繋ぐ最重要ポイント）\n\n▍意識するだけでできること\n各ラウンドの開始15〜20秒で「ミッドの状況を誰かが確認したか」をチェックする。チームの誰かがミッド偵察をしている→その情報を共有してもらう。誰もしていない→自分が情報を取りに行くか、チームに促す。`,
+              tip: 'ラウンド開始後10〜15秒で「ミッドどうなってる？」と一回確認するだけで試合への貢献が変わる。情報を取るだけでいい、戦う必要はない。',
+              addLabel: 'ミッド意識をルーティンに追加',
+              addItem: { icon: '🏙️', text: '試合：各ラウンドでミッドの状況を必ず確認する', time: 0 }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'weapon',
+      icon: '🔫',
+      iconBg: '#f0f5ff',
+      title: '武器・射撃理論',
+      desc: 'カウンターストレイフ・リコイル・武器選択',
+      children: [
+        {
+          id: 'weapon-movement',
+          icon: '🏃',
+          iconBg: '#f0f5ff',
+          title: '移動と射撃精度',
+          desc: 'カウンターストレイフで精度を最大化',
+          children: [
+            {
+              id: 'weapon-counterstraf',
+              icon: '↔️',
+              iconBg: '#f0f5ff',
+              title: 'カウンターストレイフの仕組み',
+              time: '理論',
+              body: `Valorantにおいて「移動しながら正確に撃つ」ことは物理的に不可能。移動速度がゼロになった瞬間にだけ、弾のスプレッドが最小になる。カウンターストレイフはその「速度ゼロ」を素早く作る技術。\n\n▍移動中の精度の数字\n止まって撃つ：スプレッド最小、HS率最高\n歩きながら撃つ（シフト）：スプレッドが約30%拡大\n走りながら撃つ：スプレッドが約60〜80%拡大（弾が明後日に飛ぶ）\n\n▍カウンターストレイフの仕組み\n通常の止まり方：Dキー（右移動）→放す→0.1〜0.2秒の慣性で動き続ける→精度が悪い状態で止まる\nカウンターストレイフ：Dキー→Aキーを一瞬タップ→慣性が即座にキャンセルされる→速度ゼロ→高精度\n\nポイントは「Aキーを押しっぱなしにしない」こと。一瞬タップしてすぐ離す。\n\n▍正しいタイミング\n「カウンターストレイフのキーを押した瞬間に撃てばOK」。速度がゼロになるのを待つ必要はない。押した瞬間が精度のピークになる。\n\n▍習得手順\n<strong>STEP 1</strong>：デスマッチで完全に止まって撃つことに集中（1週間）\n<strong>STEP 2</strong>：左右に動いて、止まるときにカウンターキーを入れる練習（2週間）\n<strong>STEP 3</strong>：実戦で無意識にできているか確認\n\n▍体感できる効果\nカウンターストレイフを習得すると、同じ撃ち合いで「自分だけ当たっていて相手に当たらない」状態が増える。相手は動きながら撃って精度が落ちているから。`,
+              tip: 'レンジで壁に向かって「ADAD」をしながら止まる瞬間だけ撃ってみる。止まった瞬間の弾痕が集中し、動いている間の弾痕がバラバラになるのが確認できる。',
+              addLabel: 'カウンターストレイフ練習をルーティンに追加',
+              addItem: { icon: '↔️', text: 'デスマッチ：左右ストレイフ→止まる瞬間だけ撃つ', time: 10 }
+            },
+            {
+              id: 'weapon-stop',
+              icon: '🛑',
+              iconBg: '#f0f5ff',
+              title: '止まって撃つ（最優先事項）',
+              time: '習慣',
+              body: `エイムの基礎の中の基礎。これが身についていない状態でKovaak'sをやっても、Kovaak'sでの動かない的に当てる練習が実戦に活かされない。\n\n▍なぜ「止まって撃つ」が最優先か\nValorantはゲームエンジンの仕様で、移動速度が高いほどスプレッドが広がる。つまり「動きながら撃っている人」と「止まって撃っている人」は、エイムの技術差がなくても「止まって撃つ人」が圧倒的に有利。\n\nHS率に換算すると：\n動きながら常に撃つ→HS率が実力比-3〜5%\n止まってから撃つ習慣を徹底→HS率が実力比+2〜5%\n合計で6〜10%の差が「止まるだけ」で生まれる。\n\n▍「止まる→撃つ→動く」のリズム\nピークのたびに：移動して角度を変える→止まる（カウンターストレイフ）→撃つ→また動く\nこのリズムを実戦で無意識に行えるまで繰り返す。\n\n▍デスマッチでの練習方法\n最初の5〜10分：KDAを気にせず「止まってから撃つ」だけを意識\n死んでもいい。止まって撃てたかどうかだけを評価基準にする。\n\n▍チェック方法\n試合後のハイライトやリプレイを見て「動きながら撃っているシーンが何回あるか」を数える。動きながら撃って当たったシーンは「まぐれ」と判定する。当たったかどうかより「止まって撃てたか」を判断基準にする。\n\n▍この習慣が身につくサイン\nデスマッチでKDAが安定してくる。死亡する前に相手に1〜2発入れられるようになる。「当たった」ではなく「止まって撃てた」という感覚が出てくる。`,
+              tip: 'デスマッチの最初の5分は「止まってから撃つ」だけを意識する。KD・キル数は無視していい。純粋に止まって撃てたかどうかだけを自己評価する。',
+              addLabel: '止まって撃つ練習をルーティンに追加',
+              addItem: { icon: '🛑', text: 'デスマッチ：止まってから撃つだけを意識（KD気にしない）', time: 10 }
+            }
+          ]
+        },
+        {
+          id: 'weapon-recoil',
+          icon: '🔧',
+          iconBg: '#f0f5ff',
+          title: 'リコイルコントロール',
+          desc: 'ヴァンダル vs ファントムの違い',
+          children: [
+            {
+              id: 'weapon-vandal-phantom',
+              icon: '⚔️',
+              iconBg: '#f0f5ff',
+              title: 'ヴァンダル vs ファントム の選び方',
+              time: '理論',
+              body: `「ヴァンダルとファントムどちらが強いか」はValorantで最も議論される質問の一つ。答えは「状況次第」だが、プラチナ→ダイヤのランク帯では判断基準がある。\n\n▍ヴァンダル（Vandal）の特徴\nダメージ：全距離でHS一発160ダメージ（ヘルメットあり=160、なし=195）\n特徴：距離に関係なくHSが一発キル\nリコイル：縦に強く上がる。10発以上の連射コントロールが難しい\nベストシーン：中〜遠距離の単発・タップ撃ち\nジェットに合う理由：遠距離からの1〜2発タップ射撃が得意なプレイスタイルに合う\n\n▍ファントム（Phantom）の特徴\nダメージ：近〜中距離はHS一発128ダメージ（ヘルメットなし=140）、30m超でダメージ減衰あり\n特徴：遠距離HSが一発キルにならないケースがある\nリコイル：ヴァンダルより安定。スプレーコントロールが学びやすい\nベストシーン：近〜中距離の連射・スプレー\nサイレントの利点：音が小さいため位置を特定されにくい\n\n▍プラチナ→ダイヤ帯での選択基準\n<strong>ヴァンダルを選ぶとき</strong>：遠距離交戦が多いマップ（Ascent・Breeze）、タップ射撃に自信がある、ジェットで遠距離からオペターン\n<strong>ファントムを選ぶとき</strong>：近〜中距離交戦が多いマップ（Bind・Split）、スプレーを使いたい場面が多い\n\n▍最重要アドバイス\n片方を徹底的に練習する。「ヴァンダルがうまくいかないからファントムに変える」を繰り返すのは最も上達が遅いパターン。決めた武器を2〜3週間固定して、その武器のリコイルパターンを体に染み込ませる。`,
+              tip: 'ジェットはヴァンダルとの相性が特に高い。遠距離からの1〜2発タップ射撃がジェットの機動力と組み合わさると強力。',
+              addLabel: '武器練習をルーティンに追加',
+              addItem: { icon: '⚔️', text: 'レンジ：メイン武器のスプレーパターンを100発確認', time: 10 }
+            },
+            {
+              id: 'weapon-spray',
+              icon: '💨',
+              iconBg: '#f0f5ff',
+              title: 'スプレーコントロールの考え方',
+              time: '理論',
+              body: `▍ValorantのリコイルがCS2と根本的に違う理由\nCS2（Counter-Strike）のリコイルは固定パターン（AK-47の正確なリコイルパターンが存在する）。しかしValorantのリコイルには「ランダムスプレッド」の要素が含まれる。つまり同じように撃っても毎回弾が全く同じ場所には飛ばない。\n\n→だから「リコイルパターンの完全暗記」は意味がなく、「リコイルに反応してマウスを動かす」感覚が必要になる。\n\n▍リコイルの基本パターン\n<strong>1〜4発目：ほぼ垂直に上昇</strong>→マウスを下に引く\n<strong>5〜8発目：右または左にランダムにブレ始める</strong>→反応してマウスを逆方向に動かす\n<strong>9発目以降：ランダム要素が増加</strong>→この時点でのコントロールは難しい\n\n▍「スプレーより1〜2発タップ」が強い理由\nValorantの交戦距離の80%は「止まって1〜2発で勝負が決まる距離」。スプレーを10発使うより、タップ射撃で2発を確実に当てる方が効率が高い。スプレーは近距離の突発的な交戦か、スモーク内の索敵にのみ使う。\n\n▍距離別の撃ち方ガイド\n<strong>近距離（5m以内）</strong>：スプレー可。リコイルを「なんとなく下に」引きながら連射。\n<strong>中距離（5〜20m）</strong>：1〜3発のバーストが最適。止まってから撃つ。\n<strong>遠距離（20m以上）</strong>：1発ずつタップ。リコイルを1発撃つたびにリセットして再度合わせる。\n\n▍練習方法\nレンジで壁に向かってスプレーして弾痕を確認する。1〜4発目の弾痕と5〜10発目の弾痕の広がりを見比べる。実戦では4発以内で勝負を決めるように意識する。`,
+              tip: 'スプレーコントロールの練習より「4発以内に勝負を終わらせる」意識の方が実戦でのHS率が上がる。タップ射撃を優先して練習する。',
+              addLabel: 'スプレー練習をルーティンに追加',
+              addItem: { icon: '💨', text: 'レンジ：遠距離はタップ、近距離はスプレーを使い分ける練習', time: 10 }
+            }
+          ]
+        },
+        {
+          id: 'weapon-agent',
+          icon: '🎭',
+          iconBg: '#f5f0ff',
+          title: 'エージェント・役割選択',
+          desc: 'ワントリックか複数か',
+          children: [
+            {
+              id: 'weapon-onetrick',
+              icon: '⚡',
+              iconBg: '#f5f0ff',
+              title: 'ワントリックで早く上がる',
+              time: '理論',
+              body: `「色々なエージェントを使えた方が強い」は理論上は正しいが、ランクを上げる目的においては誤り。\n\n▍ワントリックが最速な理由（認知負荷の話）\n人間の脳が1試合中に処理できる情報量には限界がある。エージェントの操作・アビリティの使い方を考えるために認知リソースを使うと、「立ち回り・エイム・情報収集」に使えるリソースが減る。\n\nメインエージェントを100試合やると、アビリティの使い方が「無意識」になる。→認知リソースが全て「状況判断・エイム」に使える→判断の質が上がる→ランクが上がる\n\n▍プラチナ→ダイヤは2〜3体で十分な理由\n同じロール内で2〜3体の選択肢を持つのは現実的（例：ジェット＋ノックス、またはジェット＋ヴァイパー）。ただし「ジェットとソーヴァとフェニックスと... 」と広げるのは全て中途半端になる原因。\n\n▍ワントリック選手の成功例\n<strong>TenZ（元Sentinels）</strong>：チェンバー・ジェット中心。2体への集中が世界最高レベルの動きに繋がった。\n<strong>Asuna（100 Thieves）</strong>：ノックス・レイナ中心の攻撃的デュエリスト。「少数徹底」で世界トップに。\n<strong>yay（Element Mystic）</strong>：チェンバー・ジェット。エージェントへの深い理解が「置き幅」理論に繋がった。\n\n▍ジェットをメインにするなら\nまずジェット単体で50試合やる。アビリティを無意識に使えているか確認する。その後、チームに別のデュエリストが必要なときのサブとして1体選ぶ。\n\n▍例外\nコンペティティブでチームに必要なロール（コントローラー・センチネル）が誰もいない場合、柔軟性として別ロールの1体を持っておくのは合理的。ただしそれも「使えるレベル」ではなく「慣れたレベル」に留める。`,
+              tip: 'ジェットだけで今アクト50試合やってみる。50試合後に「アビリティを考えなくなった瞬間」を感じられたら、ワントリックの効果が出ている証拠。',
+              addLabel: 'エージェント絞りをルーティンに追加',
+              addItem: { icon: '⚡', text: '今アクト：エージェントを2〜3体に絞って専念する', time: 0 }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// ========== 状態管理 ==========
+let currentPath = [];
+let cart = [];
+let addedIds = new Set();
+
+// ========== ナビゲーション ==========
+function getNodeByPath(path) {
+  let node = tree;
+  for (const id of path) {
+    node = node.children?.find(c => c.id === id);
+    if (!node) return null;
+  }
+  return node;
+}
+
+function navigate(id) {
+  currentPath.push(id);
+  render();
+}
+
+function navigateToIndex(index) {
+  currentPath = currentPath.slice(0, index);
+  render();
+}
+
+function render() {
+  const node = getNodeByPath(currentPath);
+  const children = node ? node.children : tree.children;
+  const isLeaf = (n) => !n.children || n.children.length === 0;
+
+  // パンくずリスト
+  const breadcrumb = document.getElementById('breadcrumb');
+  const parts = [{ label: 'ホーム', index: 0 }];
+  let cur = tree;
+  for (let i = 0; i < currentPath.length; i++) {
+    cur = cur.children.find(c => c.id === currentPath[i]);
+    if (cur) parts.push({ label: cur.title, index: i + 1 });
+  }
+  breadcrumb.innerHTML = parts.map((p, i) =>
+    `<span class="breadcrumb-item ${i === parts.length - 1 ? 'active' : ''}" onclick="navigateToIndex(${p.index})">${p.label}</span>${i < parts.length - 1 ? '<span class="breadcrumb-sep">›</span>' : ''}`
+  ).join('');
+
+  // タイトル
+  const headerTitle = document.getElementById('header-title');
+  const headerSub = document.getElementById('header-sub');
+  if (currentPath.length === 0) {
+    headerTitle.textContent = '理論ツリー';
+    headerSub.textContent = 'カテゴリを選んで理論を深ぼろう';
+  } else {
+    const cur = getNodeByPath(currentPath);
+    headerTitle.textContent = cur?.title || '';
+    headerSub.textContent = cur?.desc || '';
+  }
+
+  // ノード一覧
+  const container = document.getElementById('tree-container');
+  container.innerHTML = '';
+
+  (children || []).forEach(child => {
+    const leaf = isLeaf(child);
+    const added = addedIds.has(child.id);
+
+    if (leaf) {
+      // リーフノード
+      const card = document.createElement('div');
+      card.className = 'leaf-card' + (added ? ' added' : '');
+      card.innerHTML = `
+        <div class="leaf-header">
+          <div class="node-icon" style="background:${child.iconBg}">${child.icon}</div>
+          <div class="node-content">
+            <div class="node-title">${child.title}</div>
+            <div class="leaf-time">${child.time || ''}</div>
+          </div>
+        </div>
+        <div class="leaf-body">${(child.body || '').replace(/\n/g, '<br>')}</div>
+        <div class="leaf-tip">💡 ${child.tip || ''}</div>
+        <button class="add-btn ${added ? 'added' : ''}" onclick="addToCart('${child.id}')">
+          ${added ? '✓ 追加済み' : (child.addLabel || 'ルーティンに追加')}
+        </button>
+      `;
+      container.appendChild(card);
+    } else {
+      // ツリーノード
+      const card = document.createElement('div');
+      card.className = 'node-card has-children';
+      card.onclick = () => navigate(child.id);
+      card.innerHTML = `
+        <div class="node-icon" style="background:${child.iconBg}">${child.icon}</div>
+        <div class="node-content">
+          <div class="node-title">${child.title}</div>
+          <div class="node-desc">${child.desc || ''}</div>
+        </div>
+        <div class="node-arrow"></div>
+      `;
+      container.appendChild(card);
+    }
+  });
+
+  updateCart();
+}
+
+function findNode(node, id) {
+  if (node.id === id) return node;
+  if (node.children) {
+    for (const child of node.children) {
+      const found = findNode(child, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function addToCart(nodeId) {
+  if (addedIds.has(nodeId)) return;
+  const found = findNode(tree, nodeId);
+  if (!found) return;
+  addedIds.add(nodeId);
+  cart.push({ ...found });
+  render();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(c => c.id !== id);
+  addedIds.delete(id);
+  render();
+}
+
+function updateCart() {
+  const bar = document.getElementById('cart-bar');
+  const count = document.getElementById('cart-count');
+  const totalTime = document.getElementById('cart-time');
+  if (cart.length === 0) {
+    bar.style.transform = 'translateY(100%)';
+    return;
+  }
+  bar.style.transform = 'translateY(0)';
+  count.textContent = cart.length;
+  const mins = cart.reduce((s, c) => s + (c.addItem?.time || 0), 0);
+  totalTime.textContent = mins > 0 ? `約${mins}分/日` : '';
+}
+
+function openRoutineModal() {
+  renderRoutineModal();
+  document.getElementById('routine-modal').style.display = 'flex';
+}
+
+function renderRoutineModal() {
+  const list = document.getElementById('routine-list');
+  list.innerHTML = cart.map(item => `
+    <div class="routine-item">
+      <div class="routine-icon">${item.addItem?.icon || item.icon}</div>
+      <div class="routine-text">${item.addItem?.text || item.title}</div>
+      <div class="routine-meta">${item.addItem?.time ? item.addItem.time + '分' : ''}</div>
+      <button class="routine-remove" onclick="removeFromCart('${item.id}'); renderRoutineModal()">✕</button>
+    </div>
+  `).join('');
+  const total = cart.reduce((s, c) => s + (c.addItem?.time || 0), 0);
+  document.getElementById('routine-total').textContent = `合計 約${total}分/日`;
+}
+
+function saveRoutine() {
+  alert('ルーティンを保存しました！\nACTMATEのルーティン画面で確認できます。');
+  document.getElementById('routine-modal').style.display = 'none';
+}
+
+render();
+</script>
+
+<!-- カートバー -->
+<div id="cart-bar" class="cart-bar">
+  <div class="cart-info">
+    <span class="cart-icon">🛒</span>
+    <span><strong id="cart-count">0</strong> 項目追加済み</span>
+    <span id="cart-time" class="cart-time"></span>
+  </div>
+  <button class="cart-btn" onclick="openRoutineModal()">ルーティンを作る →</button>
+</div>
+
+<!-- ルーティンモーダル -->
+<div id="routine-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">🏋️ 練習ルーティン</div>
+      <button class="modal-close" onclick="document.getElementById('routine-modal').style.display='none'">✕</button>
+    </div>
+    <div id="routine-list" class="routine-list"></div>
+    <div id="routine-total" class="routine-total"></div>
+    <button class="save-btn" onclick="saveRoutine()">💾 ルーティンを保存する</button>
+  </div>
+</div>
+
+</body>
+</html>

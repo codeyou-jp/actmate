@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>プロのウォームアップ大全 - ACTMATE</title>
+<style>
+  :root {
+    --red: #FF4655;
+    --red-light: #fff0f2;
+    --text: #111;
+    --muted: #777;
+    --border: #eee;
+    --card-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    --off-white: #f8f8f8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--off-white); color: var(--text);
+    max-width: 430px; margin: 0 auto; min-height: 100vh;
+  }
+
+  /* ===== ヒーロー ===== */
+  .hero {
+    background: #0d0f10;
+    padding: 52px 24px 32px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 80% 20%, rgba(255,70,85,0.15) 0%, transparent 60%);
+  }
+  .hero-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .hero-title {
+    font-size: 26px; font-weight: 900; color: white;
+    line-height: 1.2; margin-bottom: 8px;
+  }
+  .hero-title span { color: var(--red); }
+  .hero-sub { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.6; }
+  .hero-stats {
+    display: flex; gap: 20px; margin-top: 20px;
+  }
+  .hero-stat { }
+  .hero-stat-num { font-size: 22px; font-weight: 900; color: white; }
+  .hero-stat-label { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+
+  /* ===== フィルタータブ ===== */
+  .filter-bar {
+    background: white; border-bottom: 1px solid var(--border);
+    padding: 12px 16px; display: flex; gap: 8px; overflow-x: auto;
+    scrollbar-width: none; position: sticky; top: 0; z-index: 50;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-btn {
+    border: 1.5px solid var(--border); border-radius: 100px;
+    padding: 6px 14px; font-size: 12px; font-weight: 700;
+    color: var(--muted); background: white; cursor: pointer;
+    white-space: nowrap; font-family: inherit; transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .filter-btn.active {
+    background: var(--red); border-color: var(--red); color: white;
+  }
+
+  /* ===== コンテンツ ===== */
+  .content { padding: 16px 16px 100px; }
+
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    color: var(--muted); text-transform: uppercase;
+    margin: 20px 0 10px 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ===== プロカード ===== */
+  .pro-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 20px; margin-bottom: 12px;
+    box-shadow: var(--card-shadow); overflow: hidden;
+  }
+
+  .pro-header {
+    padding: 16px 18px 14px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .pro-card.open .pro-header { border-color: var(--border); }
+
+  .pro-avatar {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0; font-weight: 900;
+    font-style: italic;
+  }
+  .pro-info { flex: 1; }
+  .pro-name { font-size: 16px; font-weight: 900; }
+  .pro-meta { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .pro-tag {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px;
+    background: var(--red-light); color: var(--red); border: 1px solid #ffd0d5;
+  }
+  .pro-arrow { transition: transform 0.2s; color: #ccc; }
+  .pro-card.open .pro-arrow { transform: rotate(90deg); }
+  .pro-arrow svg { width: 18px; height: 18px; }
+
+  .pro-body { display: none; padding: 16px 18px 18px; }
+  .pro-card.open .pro-body { display: block; }
+
+  /* ルーティンアイテム */
+  .routine-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid #f5f5f5;
+  }
+  .routine-item:last-child { border-bottom: none; }
+
+  .routine-num {
+    width: 24px; height: 24px; border-radius: 8px;
+    background: var(--red); color: white;
+    font-size: 11px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  .routine-info { flex: 1; }
+  .routine-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+  .routine-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .routine-chips { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+  .chip {
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 100px;
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .chip.aim { background: #fff0f2; color: var(--red); border-color: #ffd0d5; }
+  .chip.dm { background: #f0f8ff; color: #2563eb; border-color: #bfdbfe; }
+  .chip.range { background: #f0fff4; color: #16a34a; border-color: #bbf7d0; }
+  .chip.mental { background: #fefce8; color: #ca8a04; border-color: #fde68a; }
+  .chip.physical { background: #fdf4ff; color: #9333ea; border-color: #e9d5ff; }
+
+  .routine-time {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    white-space: nowrap; padding-top: 3px; flex-shrink: 0;
+  }
+
+  /* プロの名言 */
+  .pro-quote {
+    margin-top: 12px; padding: 12px 14px;
+    background: #f9f9f9; border-radius: 12px;
+    border-left: 3px solid var(--red);
+  }
+  .pro-quote p { font-size: 12px; color: var(--muted); line-height: 1.7; font-style: italic; }
+  .pro-quote cite { font-size: 11px; color: var(--red); font-style: normal; font-weight: 700; display: block; margin-top: 6px; }
+
+  /* ===== シナリオカード ===== */
+  .scenario-grid { display: flex; flex-direction: column; gap: 8px; }
+  .scenario-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    box-shadow: var(--card-shadow); display: flex; align-items: center; gap: 12px;
+  }
+  .scenario-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .scenario-icon svg { width: 20px; height: 20px; }
+  .scenario-icon.aim { background: var(--red-light); color: var(--red); }
+  .scenario-icon.kov { background: #f0f4ff; color: #4f6ef7; }
+  .scenario-info { flex: 1; }
+  .scenario-name { font-size: 13px; font-weight: 700; }
+  .scenario-app { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+  .scenario-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .scenario-who { font-size: 10px; color: var(--red); font-weight: 700; margin-top: 4px; }
+
+  /* ===== 共通ウォームアップフロー ===== */
+  .flow-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 20px; padding: 18px; box-shadow: var(--card-shadow); margin-bottom: 12px;
+  }
+  .flow-step {
+    display: flex; align-items: flex-start; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 900; color: var(--muted);
+    flex-shrink: 0; position: relative;
+  }
+  .flow-circle.done { background: var(--red); border-color: var(--red); color: white; }
+  .flow-info { flex: 1; }
+  .flow-title { font-size: 13px; font-weight: 700; }
+  .flow-desc { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+  .flow-time { font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; padding-top: 6px; }
+
+  /* ===== ボトムナビ ===== */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px; background: white;
+    border-top: 1.5px solid var(--border); display: flex;
+    padding: 8px 0 22px; z-index: 100;
+  }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; padding: 4px 0; }
+  .nav-icon svg { width: 22px; height: 22px; color: var(--muted); }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .nav-item.active .nav-label { color: var(--red); }
+  .nav-item.active .nav-icon svg { color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ヒーロー -->
+<div class="hero">
+  <div class="hero-label">ACTMATE — Pro Reference</div>
+  <div class="hero-title">世界のプロが<br>やってる<span>ウォームアップ</span>大全</div>
+  <div class="hero-sub">VCT・T1プロの実際のルーティンを網羅。<br>そのまま真似できる形でまとめた。</div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num">8</div>
+      <div class="hero-stat-label">プロ選手</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">12</div>
+      <div class="hero-stat-label">シナリオ</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">4</div>
+      <div class="hero-stat-label">カテゴリ</div>
+    </div>
+  </div>
+</div>
+
+<!-- フィルター -->
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filter('all', this)">すべて</button>
+  <button class="filter-btn" onclick="filter('pro', this)">プロ別</button>
+  <button class="filter-btn" onclick="filter('scenario', this)">シナリオ一覧</button>
+  <button class="filter-btn" onclick="filter('flow', this)">推奨フロー</button>
+</div>
+
+<div class="content">
+
+  <!-- ===== プロ別ルーティン ===== -->
+  <div class="section-label" data-cat="pro flow all">プロ別ルーティン</div>
+
+  <!-- TenZ -->
+  <div class="pro-card" data-cat="pro all" onclick="toggleCard(this)">
+    <div class="pro-header">
+      <div class="pro-avatar" style="background:#1a1a2e;color:#FF4655">T</div>
+      <div class="pro-info">
+        <div class="pro-name">TenZ</div>
+        <div class="pro-meta">
+          <span>Cloud9 / 元Sentinels</span>
+          <span class="pro-tag">Jett / Neon</span>
+        </div>
+      </div>
+      <div class="pro-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="pro-body">
+      <div class="routine-item">
+        <div class="routine-num">1</div>
+        <div class="routine-info">
+          <div class="routine-title">Aimlabs プレイリスト</div>
+          <div class="routine-desc">TenZ公式プレイリスト。Gridshot Ultimate → Spidershot → Microshot の順。キューを待ちながら流す。</div>
+          <div class="routine-chips"><span class="chip aim">Aimlabs</span></div>
+        </div>
+        <div class="routine-time">15分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">2</div>
+        <div class="routine-info">
+          <div class="routine-title">The Range — ドローン射撃</div>
+          <div class="routine-desc">レンジのフライングドローンを全部倒す。フリックの感覚チェックに使う。</div>
+          <div class="routine-chips"><span class="chip range">レンジ</span></div>
+        </div>
+        <div class="routine-time">5分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">3</div>
+        <div class="routine-info">
+          <div class="routine-title">デスマッチ × 2本</div>
+          <div class="routine-desc">スコアは気にせず「動きながら当てる」感覚を作る。最低20〜30分。感度が合ってると感じたらランク開始。</div>
+          <div class="routine-chips"><span class="chip dm">デスマッチ</span></div>
+        </div>
+        <div class="routine-time">20〜30分</div>
+      </div>
+      <div class="pro-quote">
+        <p>"感度は変えるな。同じ設定を使い続けることがコンシステンシーの鍵。違和感があるのは感度じゃなくてウォームアップ不足。"</p>
+        <cite>— TenZ</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- yay -->
+  <div class="pro-card" data-cat="pro all" onclick="toggleCard(this)">
+    <div class="pro-header">
+      <div class="pro-avatar" style="background:#0a1628;color:#60a5fa">y</div>
+      <div class="pro-info">
+        <div class="pro-name">yay</div>
+        <div class="pro-meta">
+          <span>NRG / 元OpTic</span>
+          <span class="pro-tag">Chamber / Jett</span>
+        </div>
+      </div>
+      <div class="pro-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="pro-body">
+      <div class="routine-item">
+        <div class="routine-num">1</div>
+        <div class="routine-info">
+          <div class="routine-title">手首・指のフィジカルウォームアップ</div>
+          <div class="routine-desc">マウスを持つ前に手首を回す・指を伸ばす。プロの中でも珍しくフィジカルを重視する数少ない選手。</div>
+          <div class="routine-chips"><span class="chip physical">フィジカル</span></div>
+        </div>
+        <div class="routine-time">3〜5分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">2</div>
+        <div class="routine-info">
+          <div class="routine-title">Aimlabs — Sixshot</div>
+          <div class="routine-desc">6つのターゲットを素早く切り替えて撃つ。yayが「マイクロ調整」を鍛えるために使うシナリオ。クロスヘアがズレたときの微修正を練習。</div>
+          <div class="routine-chips"><span class="chip aim">Aimlabs</span></div>
+        </div>
+        <div class="routine-time">10分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">3</div>
+        <div class="routine-info">
+          <div class="routine-title">VCT タスク（Aimlabs公式）</div>
+          <div class="routine-desc">yay監修のAimlabs VCTタスク。Valorant環境に特化した距離感・ターゲットサイズで設計されている。</div>
+          <div class="routine-chips"><span class="chip aim">Aimlabs</span></div>
+        </div>
+        <div class="routine-time">10分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">4</div>
+        <div class="routine-info">
+          <div class="routine-title">「今日の課題」を1つ決めてDM</div>
+          <div class="routine-desc">yayはルーティンを固定しない。「今日は〇〇が弱い」と感じたことだけを集中的に練習するスタイル。</div>
+          <div class="routine-chips"><span class="chip dm">デスマッチ</span><span class="chip mental">メンタル</span></div>
+        </div>
+        <div class="routine-time">15分</div>
+      </div>
+      <div class="pro-quote">
+        <p>"俺はルーティンを決めない。その日足りないと感じるものだけをやる。同じことを毎日繰り返すより、自分の弱点を意識することの方が大事。"</p>
+        <cite>— yay</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- aspas -->
+  <div class="pro-card" data-cat="pro all" onclick="toggleCard(this)">
+    <div class="pro-header">
+      <div class="pro-avatar" style="background:#1a0a00;color:#f97316">A</div>
+      <div class="pro-info">
+        <div class="pro-name">aspas</div>
+        <div class="pro-meta">
+          <span>LOUD</span>
+          <span class="pro-tag">Jett / Iso</span>
+        </div>
+      </div>
+      <div class="pro-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="pro-body">
+      <div class="routine-item">
+        <div class="routine-num">1</div>
+        <div class="routine-info">
+          <div class="routine-title">Shanks ウォームアップルーティン（Kovaak's）</div>
+          <div class="routine-desc">aspasはKovaak'sの「Shanks warmup」を愛用。世界のKovaak'sユーザーランキングでaspasとwootが1位・2位を占めるほどのヘビーユーザー。</div>
+          <div class="routine-chips"><span class="chip aim">Kovaak's</span></div>
+        </div>
+        <div class="routine-time">30〜45分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">2</div>
+        <div class="routine-info">
+          <div class="routine-title">デスマッチ — 純粋な機械練習</div>
+          <div class="routine-desc">aspasはDMをひたすら回す。戦術より「当てる」「動く」の反復。世界最高レベルのメカニクスはこの反復量から来ている。</div>
+          <div class="routine-chips"><span class="chip dm">デスマッチ</span></div>
+        </div>
+        <div class="routine-time">20〜30分</div>
+      </div>
+      <div class="pro-quote">
+        <p>"Kovaak'sは毎日やる。感覚が鈍ると試合に出る。ウォームアップをサボった日は必ずパフォーマンスが落ちるのがわかる。"</p>
+        <cite>— aspas（配信より）</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- nAts -->
+  <div class="pro-card" data-cat="pro all" onclick="toggleCard(this)">
+    <div class="pro-header">
+      <div class="pro-avatar" style="background:#001a10;color:#22c55e">n</div>
+      <div class="pro-info">
+        <div class="pro-name">nAts</div>
+        <div class="pro-meta">
+          <span>Team Liquid / 元Gambit</span>
+          <span class="pro-tag">Cypher / Viper</span>
+        </div>
+      </div>
+      <div class="pro-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="pro-body">
+      <div class="routine-item">
+        <div class="routine-num">1</div>
+        <div class="routine-info">
+          <div class="routine-title">レンジ — 100ボット（フルアーマー）</div>
+          <div class="routine-desc">50〜100体のボットを撃つ。最初は全弾当てることより「フォームを作る」感覚で。フルスプレーの精度チェック。</div>
+          <div class="routine-chips"><span class="chip range">レンジ</span></div>
+        </div>
+        <div class="routine-time">10分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">2</div>
+        <div class="routine-info">
+          <div class="routine-title">レンジ — ハードボット 30体（アーマーなし）</div>
+          <div class="routine-desc">動くボットをアーマーなしで倒す。フリックと1タップの精度チェック。これを30回繰り返す。</div>
+          <div class="routine-chips"><span class="chip range">レンジ</span></div>
+        </div>
+        <div class="routine-time">15分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">3</div>
+        <div class="routine-info">
+          <div class="routine-title">レンジ — クロスヘアトラッキング走り込み</div>
+          <div class="routine-desc">レンジを走り回りながらボットの頭にクロスヘアを合わせ続ける。トラッキング力とクロスヘアプレースメントを同時に鍛える。</div>
+          <div class="routine-chips"><span class="chip range">レンジ</span></div>
+        </div>
+        <div class="routine-time">10分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">4</div>
+        <div class="routine-info">
+          <div class="routine-title">デスマッチ（サウンドあり）× 4〜5本</div>
+          <div class="routine-desc">足音・スキル音を聞きながら。nAtsはゲーム内の情報処理も同時にウォームアップする考え方。</div>
+          <div class="routine-chips"><span class="chip dm">デスマッチ</span></div>
+        </div>
+        <div class="routine-time">40〜50分</div>
+      </div>
+      <div class="pro-quote">
+        <p>"Aimlabsは使わない。全部ゲーム内でやる。レンジとDMだけで十分。ゲームの感覚はゲームでしか作れない。"</p>
+        <cite>— nAts（Team Liquid動画より）</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- ScreaM -->
+  <div class="pro-card" data-cat="pro all" onclick="toggleCard(this)">
+    <div class="pro-header">
+      <div class="pro-avatar" style="background:#1a1000;color:#eab308">S</div>
+      <div class="pro-info">
+        <div class="pro-name">ScreaM</div>
+        <div class="pro-meta">
+          <span>Team Liquid / 元CS:GO伝説</span>
+          <span class="pro-tag">Reyna / Jett</span>
+        </div>
+      </div>
+      <div class="pro-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="pro-body">
+      <div class="routine-item">
+        <div class="routine-num">1</div>
+        <div class="routine-info">
+          <div class="routine-title">Aimlabs — HS特化タスク</div>
+          <div class="routine-desc">「ヘッドショットマシン」の異名を持つScreaM。Aimlabsのヘッドショット率が異常に高いタスクだけを選んで練習。</div>
+          <div class="routine-chips"><span class="chip aim">Aimlabs</span></div>
+        </div>
+        <div class="routine-time">15分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">2</div>
+        <div class="routine-info">
+          <div class="routine-title">デスマッチ — 頭だけ狙う縛り</div>
+          <div class="routine-desc">体・足は無視。1弾目でHS or リロード、を繰り返す。KDは最悪でも構わない。精度だけを上げる。</div>
+          <div class="routine-chips"><span class="chip dm">デスマッチ</span></div>
+        </div>
+        <div class="routine-time">20分</div>
+      </div>
+      <div class="pro-quote">
+        <p>"頭を撃つことにフォーカスし続けた。それだけ。10年やっても同じことをやる。"</p>
+        <cite>— ScreaM</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- cNed -->
+  <div class="pro-card" data-cat="pro all" onclick="toggleCard(this)">
+    <div class="pro-header">
+      <div class="pro-avatar" style="background:#0a0a1a;color:#a78bfa">c</div>
+      <div class="pro-info">
+        <div class="pro-name">cNed</div>
+        <div class="pro-meta">
+          <span>FUT Esports / 元Acend</span>
+          <span class="pro-tag">Jett / Neon</span>
+        </div>
+      </div>
+      <div class="pro-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="pro-body">
+      <div class="routine-item">
+        <div class="routine-num">1</div>
+        <div class="routine-info">
+          <div class="routine-title">Aimlabs — VCT タスク（共同開発）</div>
+          <div class="routine-desc">Aimlabsと共同開発したcNed専用タスク。Jettのダッシュ後のフリックを想定した動的なターゲット設計。</div>
+          <div class="routine-chips"><span class="chip aim">Aimlabs</span></div>
+        </div>
+        <div class="routine-time">10分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">2</div>
+        <div class="routine-info">
+          <div class="routine-title">OPメカニクス練習（カスタム）</div>
+          <div class="routine-desc">OP（オペレーター）のピーク・フリックを反復。cNedはOPメカニクスが世界トップクラスで、毎日ピーク角度を確認する。</div>
+          <div class="routine-chips"><span class="chip range">レンジ</span><span class="chip dm">デスマッチ</span></div>
+        </div>
+        <div class="routine-time">15分</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Derke -->
+  <div class="pro-card" data-cat="pro all" onclick="toggleCard(this)">
+    <div class="pro-header">
+      <div class="pro-avatar" style="background:#1a0010;color:#ec4899">D</div>
+      <div class="pro-info">
+        <div class="pro-name">Derke</div>
+        <div class="pro-meta">
+          <span>Fnatic</span>
+          <span class="pro-tag">Neon / Jett</span>
+        </div>
+      </div>
+      <div class="pro-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="pro-body">
+      <div class="routine-item">
+        <div class="routine-num">1</div>
+        <div class="routine-info">
+          <div class="routine-title">Kovaak's — Luc's Final Val Swings</div>
+          <div class="routine-desc">Valorant向けに最適化されたスウィングシナリオ。ピーク後の素早いフリックを繰り返す。Fnatic内でも推奨されているシナリオ。</div>
+          <div class="routine-chips"><span class="chip aim">Kovaak's</span></div>
+        </div>
+        <div class="routine-time">15分</div>
+      </div>
+      <div class="routine-item">
+        <div class="routine-num">2</div>
+        <div class="routine-info">
+          <div class="routine-title">デスマッチ — アグレッシブピーク特化</div>
+          <div class="routine-desc">守るより先に出る。Neonの動きを意識した攻めるDM。コーナーから大きく出てフリック、を繰り返す。</div>
+          <div class="routine-chips"><span class="chip dm">デスマッチ</span></div>
+        </div>
+        <div class="routine-time">20分</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shroud -->
+  <div class="pro-card" data-cat="pro all" onclick="toggleCard(this)">
+    <div class="pro-header">
+      <div class="pro-avatar" style="background:#0a0a0a;color:#94a3b8">sh</div>
+      <div class="pro-info">
+        <div class="pro-name">Shroud</div>
+        <div class="pro-meta">
+          <span>元Cloud9 CS:GO / FPS神</span>
+          <span class="pro-tag">全エージェント</span>
+        </div>
+      </div>
+      <div class="pro-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="pro-body">
+      <div class="routine-item">
+        <div class="routine-num">1</div>
+        <div class="routine-info">
+          <div class="routine-title">デスマッチ — 長時間（唯一のウォームアップ）</div>
+          <div class="routine-desc">Shroudはエイムトレーナーをほぼ使わない。ひたすらDMだけ。30〜60分、感覚が戻るまでやり続ける。</div>
+          <div class="routine-chips"><span class="chip dm">デスマッチ</span></div>
+        </div>
+        <div class="routine-time">30〜60分</div>
+      </div>
+      <div class="pro-quote">
+        <p>"エイムトレーナーは必要ない。ゲームをプレイすること自体がトレーニング。DMを真剣にやれば十分。"</p>
+        <cite>— Shroud（配信より）</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== シナリオ一覧 ===== -->
+  <div class="section-label" data-cat="scenario all">おすすめシナリオ一覧</div>
+
+  <div class="scenario-grid" data-cat="scenario all">
+
+    <div class="scenario-card">
+      <div class="scenario-icon aim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <div class="scenario-info">
+        <div class="scenario-app">Aimlabs</div>
+        <div class="scenario-name">Gridshot Ultimate</div>
+        <div class="scenario-desc">6マス格子にランダム出現。反応速度と切り替えを鍛える定番。</div>
+        <div class="scenario-who">TenZ愛用</div>
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="scenario-icon aim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div class="scenario-info">
+        <div class="scenario-app">Aimlabs</div>
+        <div class="scenario-name">Sixshot</div>
+        <div class="scenario-desc">6つのターゲットを高速で切り替え。マイクロ調整能力が上がる。</div>
+        <div class="scenario-who">yay愛用</div>
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="scenario-icon aim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </div>
+      <div class="scenario-info">
+        <div class="scenario-app">Aimlabs</div>
+        <div class="scenario-name">Tile Frenzy</div>
+        <div class="scenario-desc">タイルが光ったら即クリック。小さいターゲットへの精度特化。</div>
+        <div class="scenario-who">汎用・初心者〜上級者</div>
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="scenario-icon kov">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/></svg>
+      </div>
+      <div class="scenario-info">
+        <div class="scenario-app">Kovaak's</div>
+        <div class="scenario-name">Luc's Final Val Swings</div>
+        <div class="scenario-desc">Valorant距離設計のスウィングフリック。ピーク後の素早い1タップを練習。</div>
+        <div class="scenario-who">Derke / Fnatic推奨</div>
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="scenario-icon kov">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
+      </div>
+      <div class="scenario-info">
+        <div class="scenario-app">Kovaak's</div>
+        <div class="scenario-name">Shanks Warmup</div>
+        <div class="scenario-desc">複合シナリオセット。フリック・トラッキング・切り替えをバランスよく練習。</div>
+        <div class="scenario-who">aspas / woot 世界ランク1・2位</div>
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="scenario-icon kov">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+      </div>
+      <div class="scenario-info">
+        <div class="scenario-app">Kovaak's</div>
+        <div class="scenario-name">Valorant Small Horizontal Flicks</div>
+        <div class="scenario-desc">Valorant実距離で横フリックだけを繰り返す。実戦に直結しやすい。</div>
+        <div class="scenario-who">汎用・プラチナ以上推奨</div>
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="scenario-icon aim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="scenario-info">
+        <div class="scenario-app">Aimlabs</div>
+        <div class="scenario-name">Microshot</div>
+        <div class="scenario-desc">極小ターゲットへの精密クリック。HS%改善に直結する。</div>
+        <div class="scenario-who">TenZ / 高HS%志望者向け</div>
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="scenario-icon kov">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+      </div>
+      <div class="scenario-info">
+        <div class="scenario-app">Kovaak's</div>
+        <div class="scenario-name">KovaaKs Flicking 10x Modifier</div>
+        <div class="scenario-desc">高速フリックのグラインド用。スコアより「慣れ」を目的にやる。</div>
+        <div class="scenario-who">グラインド向け</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== 推奨フロー ===== -->
+  <div class="section-label" data-cat="flow all">ランク前の推奨フロー</div>
+
+  <div class="flow-card" data-cat="flow all">
+    <div style="font-size:13px;font-weight:800;margin-bottom:14px;color:var(--text)">プロ共通の「最短ウォームアップ」（30分版）</div>
+    <div class="flow-step">
+      <div class="flow-circle done">1</div>
+      <div class="flow-info">
+        <div class="flow-title">フィジカル準備</div>
+        <div class="flow-desc">手首を10回転 × 両手。指を広げて5秒キープ × 3回。これだけで腱鞘炎リスクが下がる。</div>
+      </div>
+      <div class="flow-time">5分</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-circle done">2</div>
+      <div class="flow-info">
+        <div class="flow-title">エイムトレーナー（任意）</div>
+        <div class="flow-desc">Aimlabs Gridshot または Sixshot を1〜2本。スコアは気にしない。感覚をウォームアップするだけ。</div>
+      </div>
+      <div class="flow-time">10分</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-circle done">3</div>
+      <div class="flow-info">
+        <div class="flow-title">レンジ（カウンターストレイフ確認）</div>
+        <div class="flow-desc">ボットに対してA→D→撃 を10回。今日の「止まれてる感」を確認する。</div>
+      </div>
+      <div class="flow-time">5分</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-circle done">4</div>
+      <div class="flow-info">
+        <div class="flow-title">デスマッチ 1本</div>
+        <div class="flow-desc">最初の5分はキルを取ろうとしない。動き・クロスヘア置き・ピークタイミングだけを意識する。</div>
+      </div>
+      <div class="flow-time">10分</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-circle">5</div>
+      <div class="flow-info">
+        <div class="flow-title">今日の意識を1つ決める</div>
+        <div class="flow-desc">「今日はカウンターストレイフだけ意識する」など1個に絞る。複数は無理。</div>
+      </div>
+      <div class="flow-time">1分</div>
+    </div>
+  </div>
+
+  <div class="flow-card" data-cat="flow all">
+    <div style="font-size:13px;font-weight:800;margin-bottom:14px;color:var(--text)">時間がないときの「超短縮版」（15分）</div>
+    <div class="flow-step">
+      <div class="flow-circle done">1</div>
+      <div class="flow-info">
+        <div class="flow-title">Aimlabs Gridshot × 2本</div>
+        <div class="flow-desc">とにかく手を動かす。感覚を起こすだけでOK。</div>
+      </div>
+      <div class="flow-time">6分</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-circle done">2</div>
+      <div class="flow-info">
+        <div class="flow-title">レンジ ハードボット 30体</div>
+        <div class="flow-desc">動くボットに全弾当てられるかの確認。外れる = まだウォームアップ不足。</div>
+      </div>
+      <div class="flow-time">5分</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-circle">3</div>
+      <div class="flow-info">
+        <div class="flow-title">ランク開始</div>
+        <div class="flow-desc">最初の1〜2試合は「ウォームアップ試合」と割り切る気持ちで入ると精神的に楽。</div>
+      </div>
+      <div class="flow-time">—</div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><span class="nav-label">ホーム</span></a>
+  <a class="nav-item active" href="knowledge.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="nav-label">知識</span></a>
+  <a class="nav-item" href="tracker.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="nav-label">トラッカー</span></a>
+  <a class="nav-item" href="routine.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><span class="nav-label">ルーティン</span></a>
+  <a class="nav-item" href="goal.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></div><span class="nav-label">目標</span></a>
+</nav>
+
+<script>
+function toggleCard(el) {
+  // 他を閉じる
+  document.querySelectorAll('.pro-card.open').forEach(c => {
+    if (c !== el) c.classList.remove('open');
+  });
+  el.classList.toggle('open');
+  // スムーズスクロール
+  if (el.classList.contains('open')) {
+    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
+}
+
+function filter(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const allCats = ['pro', 'scenario', 'flow'];
+
+  document.querySelectorAll('[data-cat]').forEach(el => {
+    const cats = el.getAttribute('data-cat').split(' ');
+    if (cat === 'all' || cats.includes(cat)) {
+      el.style.display = '';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+</script>
+</body>
+</html>

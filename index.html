@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ACTMATE</title>
+<style>
+  :root {
+    --red: #FF4655;
+    --red-dark: #cc2233;
+    --red-light: #fff0f2;
+    --white: #ffffff;
+    --off-white: #fafafa;
+    --text: #111111;
+    --muted: #888;
+    --border: #f0e0e2;
+    --card-shadow: 0 2px 16px rgba(255,70,85,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--off-white);
+    color: var(--text);
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+  .hero {
+    background: var(--red);
+    padding: 48px 24px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -20px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .hero-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 3px;
+    color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .hero-title {
+    font-size: 38px; font-weight: 900; color: white;
+    letter-spacing: -1px; line-height: 1; margin-bottom: 8px;
+  }
+  .hero-sub { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 24px; }
+  .rank-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 100px; padding: 8px 16px;
+  }
+  .rank-badge svg { width: 20px; height: 20px; }
+  .rank-current { font-size: 13px; font-weight: 700; color: white; }
+  .rank-goal { font-size: 10px; color: rgba(255,255,255,0.6); }
+  .content { padding: 24px 16px 110px; }
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    color: var(--muted); text-transform: uppercase;
+    margin-bottom: 12px; padding-left: 4px;
+  }
+  .feature-main {
+    background: white; border: 1.5px solid var(--border);
+    border-radius: 20px; overflow: hidden; margin-bottom: 10px;
+    box-shadow: var(--card-shadow); cursor: pointer;
+    transition: transform 0.15s; text-decoration: none; display: block;
+  }
+  .feature-main:active { transform: scale(0.98); }
+  .feature-main-inner {
+    padding: 18px 20px 14px; display: flex; align-items: center; gap: 14px;
+  }
+  .feature-icon-big {
+    width: 50px; height: 50px; border-radius: 14px;
+    background: var(--red-light);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .feature-icon-big svg { width: 24px; height: 24px; }
+  .feature-icon-big.red { background: var(--red); }
+  .feature-icon-big.red svg { color: white; }
+  .feature-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+  .feature-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .feature-arrow { margin-left: auto; flex-shrink: 0; }
+  .feature-arrow svg { width: 20px; height: 20px; color: var(--red); }
+  .feature-tags { display: flex; gap: 6px; padding: 0 20px 16px; flex-wrap: wrap; }
+  .tag {
+    font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 100px;
+    background: var(--red-light); color: var(--red); border: 1px solid #ffd0d5;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .feature-card {
+    background: white; border: 1.5px solid var(--border);
+    border-radius: 18px; padding: 18px 16px; cursor: pointer;
+    transition: transform 0.15s; text-decoration: none; display: block;
+    box-shadow: var(--card-shadow);
+  }
+  .feature-card:active { transform: scale(0.96); }
+  .card-icon { width: 32px; height: 32px; margin-bottom: 10px; }
+  .card-icon svg { width: 32px; height: 32px; }
+  .card-title { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .card-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .feature-card.accent { background: var(--red); border-color: var(--red); }
+  .feature-card.accent .card-title { color: white; }
+  .feature-card.accent .card-desc { color: rgba(255,255,255,0.7); }
+  .feature-card.accent .card-icon svg { color: white; }
+  .today-card {
+    background: white; border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 18px 20px; box-shadow: var(--card-shadow);
+  }
+  .today-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .today-title { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .today-title svg { width: 18px; height: 18px; color: var(--red); }
+  .today-link { font-size: 12px; color: var(--red); font-weight: 600; text-decoration: none; }
+  .routine-empty { text-align: center; padding: 16px 0; color: var(--muted); font-size: 13px; }
+  .routine-empty svg { width: 32px; height: 32px; margin: 0 auto 8px; display: block; color: #ddd; }
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: white; border-top: 1.5px solid var(--border);
+    display: flex; padding: 8px 0 22px; z-index: 100;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    text-decoration: none; padding: 4px 0; transition: opacity 0.15s;
+  }
+  .nav-item:active { opacity: 0.6; }
+  .nav-icon svg { width: 22px; height: 22px; color: var(--muted); }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .nav-item.active .nav-label { color: var(--red); }
+  .nav-item.active .nav-icon svg { color: var(--red); }
+  .section-gap { margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-label">Valorant Coach</div>
+  <div class="hero-title">ACTMATE</div>
+  <div class="hero-sub">理論を学んで、ランクを上げる</div>
+  <div class="rank-badge">
+    <!-- Diamond SVG -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 3h12l4 6-10 13L2 9z"/>
+      <path d="M11 3L8 9l4 13 4-13-3-6"/>
+      <line x1="2" y1="9" x2="22" y2="9"/>
+    </svg>
+    <div>
+      <div class="rank-current">Plat 3 → Diamond 3</div>
+      <div class="rank-goal">今アクトの目標</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- 知識ライブラリへの入口 -->
+  <a href="knowledge.html" class="feature-main">
+    <div class="feature-main-inner">
+      <div class="feature-icon-big red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="feature-title">知識ライブラリ</div>
+        <div class="feature-desc">理論・エージェント・プロの練習を体系的に学ぶ</div>
+      </div>
+      <div class="feature-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </div>
+    </div>
+    <div class="feature-tags">
+      <span class="tag">理論ツリー</span><span class="tag">エージェント</span>
+      <span class="tag">プロ練習</span><span class="tag">ウォームアップ</span>
+    </div>
+  </a>
+
+  <!-- ツール -->
+  <div class="section-gap">
+    <div class="section-label">ツール</div>
+    <div class="grid-2">
+
+      <!-- トラッカー -->
+      <a href="tracker.html" class="feature-card accent">
+        <div class="card-icon">
+          <!-- 上昇グラフ -->
+          <svg viewBox="0 0 32 32" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4,24 12,14 18,18 28,8"/>
+            <polyline points="22,8 28,8 28,14"/>
+          </svg>
+        </div>
+        <div class="card-title">トラッカー</div>
+        <div class="card-desc">自分のスタッツを確認する</div>
+      </a>
+
+      <!-- ルーティン -->
+      <a href="routine.html" class="feature-card">
+        <div class="card-icon">
+          <!-- ダンベル -->
+          <svg viewBox="0 0 32 32" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="12" width="5" height="8" rx="1.5"/>
+            <rect x="25" y="12" width="5" height="8" rx="1.5"/>
+            <rect x="6" y="14" width="4" height="4" rx="1"/>
+            <rect x="22" y="14" width="4" height="4" rx="1"/>
+            <line x1="10" y1="16" x2="22" y2="16"/>
+          </svg>
+        </div>
+        <div class="card-title">ルーティン</div>
+        <div class="card-desc">今日の練習メニューを管理</div>
+      </a>
+
+      <!-- 目標 -->
+      <a href="goal.html" class="feature-card">
+        <div class="card-icon">
+          <!-- 的 -->
+          <svg viewBox="0 0 32 32" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round">
+            <circle cx="16" cy="16" r="12"/>
+            <circle cx="16" cy="16" r="7"/>
+            <circle cx="16" cy="16" r="2.5" fill="var(--red)" stroke="none"/>
+            <line x1="26" y1="6" x2="20" y2="12"/>
+            <polyline points="23,5 27,5 27,9"/>
+          </svg>
+        </div>
+        <div class="card-title">目標</div>
+        <div class="card-desc">アクト目標とランク進捗</div>
+      </a>
+
+      <!-- メモ -->
+      <a href="#" class="feature-card">
+        <div class="card-icon">
+          <!-- メモ帳 -->
+          <svg viewBox="0 0 32 32" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 4H8a2 2 0 00-2 2v20a2 2 0 002 2h16a2 2 0 002-2V10l-6-6z"/>
+            <path d="M20 4v6h6"/>
+            <line x1="10" y1="16" x2="22" y2="16"/>
+            <line x1="10" y1="21" x2="18" y2="21"/>
+          </svg>
+        </div>
+        <div class="card-title">メモ</div>
+        <div class="card-desc">ゲーム後の振り返りメモ</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- 今日の練習 -->
+  <div class="section-gap">
+    <div class="today-card">
+      <div class="today-header">
+        <div class="today-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="4" height="10" rx="1"/>
+            <rect x="18" y="7" width="4" height="10" rx="1"/>
+            <rect x="5" y="9" width="3" height="6" rx="0.5"/>
+            <rect x="16" y="9" width="3" height="6" rx="0.5"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          今日の練習
+        </div>
+        <a href="routine.html" class="today-link">設定する →</a>
+      </div>
+      <div class="routine-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="3" width="14" height="18" rx="2"/>
+          <line x1="9" y1="9" x2="15" y2="9"/>
+          <line x1="9" y1="13" x2="15" y2="13"/>
+          <line x1="9" y1="17" x2="12" y2="17"/>
+        </svg>
+        まだルーティンが設定されていません
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item active" href="index.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><span class="nav-label">ホーム</span></a>
+  <a class="nav-item" href="knowledge.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="nav-label">知識</span></a>
+  <a class="nav-item" href="tracker.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="nav-label">トラッカー</span></a>
+  <a class="nav-item" href="routine.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><span class="nav-label">ルーティン</span></a>
+  <a class="nav-item" href="goal.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></div><span class="nav-label">目標</span></a>
+</nav>
+
+</body>
+</html>

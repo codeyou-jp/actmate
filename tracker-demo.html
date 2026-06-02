@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>トラッカー DEMO - ACTMATE</title>
+<style>
+  :root {
+    --red: #FF4655; --red-light: #fff0f2;
+    --text: #111; --muted: #888;
+    --border: #f0e0e2; --card-shadow: 0 2px 16px rgba(255,70,85,0.08);
+    --off-white: #fafafa; --green: #22c55e; --yellow: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--off-white); color: var(--text); max-width: 430px; margin: 0 auto; min-height: 100vh; }
+
+  .header { background: var(--red); padding: 48px 20px 0; position: relative; overflow: hidden; }
+  .header::after { content:''; position:absolute; top:-40px; right:-30px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header-label { font-size:10px; font-weight:700; letter-spacing:3px; color:rgba(255,255,255,0.5); text-transform:uppercase; margin-bottom:4px; }
+  .profile-mini { display:flex; align-items:center; gap:12px; padding-bottom:16px; }
+  .rank-icon { font-size:28px; width:46px; height:46px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.12); border-radius:13px; flex-shrink:0; }
+  .profile-mini-name { font-size:17px; font-weight:900; color:white; }
+  .profile-mini-rank { font-size:12px; color:rgba(255,255,255,0.7); margin-top:1px; }
+  .profile-mini-rr { font-size:11px; color:rgba(255,255,255,0.5); }
+  .tab-bar { display:flex; background:rgba(0,0,0,0.15); }
+  .tab-btn { flex:1; padding:11px 0; font-size:12px; font-weight:700; color:rgba(255,255,255,0.55); background:none; border:none; cursor:pointer; position:relative; transition:color 0.15s; font-family:inherit; }
+  .tab-btn.active { color:white; }
+  .tab-btn.active::after { content:''; position:absolute; bottom:0; left:14px; right:14px; height:2.5px; background:white; border-radius:2px 2px 0 0; }
+
+  .demo-banner { background:#f59e0b; color:white; text-align:center; font-size:11px; font-weight:700; padding:6px; letter-spacing:0.5px; }
+  .tab-panel { display:none; padding:14px 14px 110px; }
+  .tab-panel.active { display:block; }
+  .card { background:white; border:1.5px solid var(--border); border-radius:18px; padding:16px 18px; margin-bottom:10px; box-shadow:var(--card-shadow); }
+  .card-title { font-size:10px; font-weight:700; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin-bottom:12px; }
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+  .stat-card { background:white; border:1.5px solid var(--border); border-radius:14px; padding:14px; box-shadow:var(--card-shadow); }
+  .stat-label { font-size:10px; font-weight:700; letter-spacing:1px; color:var(--muted); text-transform:uppercase; margin-bottom:5px; }
+  .stat-value { font-size:26px; font-weight:900; line-height:1; }
+  .stat-unit { font-size:13px; font-weight:600; color:var(--muted); }
+  .stat-bar { height:3px; background:var(--border); border-radius:100px; margin-top:8px; overflow:hidden; }
+  .stat-bar-fill { height:100%; border-radius:100px; }
+  .match-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .match-item:last-child { border-bottom:none; padding-bottom:0; }
+  .match-result { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; flex-shrink:0; }
+  .match-result.win { background:rgba(34,197,94,0.1); color:var(--green); }
+  .match-result.loss { background:rgba(255,70,85,0.1); color:var(--red); }
+  .match-body { flex:1; }
+  .match-agent { font-size:13px; font-weight:700; }
+  .match-map { font-size:11px; color:var(--muted); }
+  .match-kda { font-size:13px; font-weight:700; }
+  .match-acs { font-size:11px; color:var(--muted); text-align:right; }
+
+  /* ===== AI診断 ===== */
+  .diag-score-wrap { background:#f8f8f8; border-radius:14px; padding:16px; display:flex; align-items:center; gap:16px; margin-bottom:10px; }
+  .diag-score-circle { width:64px; height:64px; flex-shrink:0; position:relative; display:flex; align-items:center; justify-content:center; }
+  .diag-score-circle svg { position:absolute; top:0; left:0; width:64px; height:64px; transform:rotate(-90deg); }
+  .diag-score-num { font-size:20px; font-weight:900; position:relative; z-index:1; }
+  .diag-score-sub { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; font-weight:700; }
+  .diag-score-label { font-size:14px; font-weight:800; }
+  .diag-item { display:flex; gap:12px; padding:13px 0; border-bottom:1px solid var(--border); align-items:flex-start; }
+  .diag-item:last-child { border-bottom:none; padding-bottom:0; }
+  .diag-sev { width:34px; height:34px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .diag-sev.bad { background:rgba(255,70,85,0.1); }
+  .diag-sev.warn { background:rgba(245,158,11,0.1); }
+  .diag-sev.good { background:rgba(34,197,94,0.1); }
+  .diag-content { flex:1; }
+  .diag-row { display:flex; align-items:center; gap:8px; margin-bottom:3px; }
+  .diag-key { font-size:10px; font-weight:700; letter-spacing:1px; color:var(--muted); text-transform:uppercase; }
+  .diag-val { font-size:13px; font-weight:900; }
+  .diag-val.bad { color:var(--red); }
+  .diag-val.warn { color:var(--yellow); }
+  .diag-val.good { color:var(--green); }
+  .diag-text { font-size:12px; line-height:1.55; margin-bottom:6px; }
+  /* 数値ハイライト */
+  .diag-text strong { color:var(--red); font-weight:800; background:rgba(255,70,85,0.08); padding:0 3px; border-radius:4px; }
+  .diag-text strong.ok { color:var(--green); background:rgba(34,197,94,0.08); }
+  .diag-text strong.warn { color:var(--yellow); background:rgba(245,158,11,0.08); }
+  .diag-btn { display:inline-flex; align-items:center; gap:4px; background:var(--red-light); border:1px solid #ffd0d5; border-radius:100px; padding:4px 10px; font-size:11px; font-weight:700; color:var(--red); text-decoration:none; }
+  .diag-ok { font-size:12px; color:var(--green); font-weight:600; }
+  .bench-tag { display:inline-flex; align-items:center; gap:4px; font-size:10px; color:var(--muted); margin-top:4px; }
+  .bench-bar { display:flex; align-items:center; gap:6px; margin-top:5px; }
+  .bench-bar-track { flex:1; height:4px; background:#eee; border-radius:100px; overflow:hidden; }
+  .bench-bar-fill { height:100%; border-radius:100px; transition:width 0.4s; }
+  .bench-bar-label { font-size:10px; color:var(--muted); white-space:nowrap; }
+
+  /* ===== ポジション ===== */
+  .pos-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; }
+  .pos-num-card { background:white; border:1.5px solid var(--border); border-radius:14px; padding:14px 10px; text-align:center; box-shadow:var(--card-shadow); }
+  .pos-num { font-size:24px; font-weight:900; line-height:1; margin-bottom:3px; }
+  .pos-num.danger { color:var(--red); }
+  .pos-num.warn { color:var(--yellow); }
+  .pos-num.ok { color:var(--green); }
+  .pos-num-label { font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .map-tabs { display:flex; gap:6px; margin-bottom:10px; overflow-x:auto; scrollbar-width:none; }
+  .map-tabs::-webkit-scrollbar { display:none; }
+  .map-tab { flex-shrink:0; font-size:11px; font-weight:700; padding:5px 14px; border-radius:100px; cursor:pointer; border:1.5px solid var(--border); background:white; color:var(--muted); transition:all 0.15s; font-family:inherit; }
+  .map-tab.active { background:var(--red); color:white; border-color:var(--red); }
+
+  /* 攻守トグル */
+  .phase-toggle {
+    display:flex; align-items:center; gap:0; margin-bottom:10px;
+    background:#f0f0f0; border-radius:100px; padding:3px;
+  }
+  .phase-btn {
+    flex:1; padding:6px 0; font-size:11px; font-weight:700;
+    border:none; border-radius:100px; cursor:pointer; font-family:inherit;
+    background:none; color:var(--muted); transition:all 0.18s;
+  }
+  .phase-btn.active { background:white; color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,0.12); }
+  .phase-btn.active.attack { color:#FF4655; }
+  .phase-btn.active.defense { color:#3b82f6; }
+
+  .heatmap-wrap { position:relative; background:#1a1a2e; border-radius:14px; overflow:hidden; margin-bottom:10px; }
+  .heatmap-wrap canvas { display:block; width:100%; height:auto; }
+  .heatmap-legend { position:absolute; bottom:8px; right:8px; display:flex; align-items:center; gap:5px; background:rgba(0,0,0,0.65); border-radius:100px; padding:4px 10px; }
+  .heatmap-phase-label { position:absolute; top:8px; left:8px; font-size:10px; font-weight:800; padding:3px 10px; border-radius:100px; letter-spacing:0.5px; }
+  .heatmap-phase-label.all { background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.7); }
+  .heatmap-phase-label.attack { background:rgba(255,70,85,0.25); color:#FF4655; }
+  .heatmap-phase-label.defense { background:rgba(59,130,246,0.25); color:#60a5fa; }
+  .legend-dot { width:8px; height:8px; border-radius:50%; }
+  .legend-label { font-size:9px; color:rgba(255,255,255,0.7); font-weight:600; }
+  .pos-insight { display:flex; gap:10px; padding:11px 12px; border-radius:12px; margin-bottom:8px; align-items:flex-start; }
+  .pos-insight:last-child { margin-bottom:0; }
+  .pos-insight.red { background:rgba(255,70,85,0.07); }
+  .pos-insight.yellow { background:rgba(245,158,11,0.07); }
+  .pos-insight.green { background:rgba(34,197,94,0.07); }
+  .pos-insight-icon { font-size:17px; flex-shrink:0; margin-top:1px; }
+  .pos-insight-title { font-size:12px; font-weight:700; margin-bottom:2px; }
+  .pos-insight-desc { font-size:11px; color:var(--muted); line-height:1.5; }
+  .pos-note { font-size:10px; color:var(--muted); text-align:center; margin-top:10px; line-height:1.6; }
+
+  .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:white; border-top:1.5px solid var(--border); display:flex; padding:8px 0 22px; z-index:100; }
+  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; text-decoration:none; padding:4px 0; }
+  .nav-icon svg { width:22px; height:22px; color:var(--muted); }
+  .nav-label { font-size:10px; font-weight:600; color:var(--muted); }
+  .nav-item.active .nav-label { color:var(--red); }
+  .nav-item.active .nav-icon svg { color:var(--red); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">ACTMATE / トラッカー</div>
+  <div class="profile-mini">
+    <div class="rank-icon">💎</div>
+    <div>
+      <div class="profile-mini-name">ACTMATEくん <span style="font-size:12px;opacity:.6">#JP1</span></div>
+      <div class="profile-mini-rank">Diamond 2 · 64 RR</div>
+      <div class="profile-mini-rr">ピーク: Immortal 1</div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('stats',this)">スタッツ</button>
+    <button class="tab-btn" onclick="switchTab('diag',this)">🧠 AI診断</button>
+    <button class="tab-btn" onclick="switchTab('pos',this)">📍 ポジション</button>
+  </div>
+</div>
+
+<div class="demo-banner">🎮 DEMO MODE — サンプルデータで表示中</div>
+
+<!-- ===== スタッツ ===== -->
+<div class="tab-panel active" id="panel-stats">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">K/D</div>
+      <div class="stat-value" style="color:#FF4655">0.87</div>
+      <div class="stat-bar"><div class="stat-bar-fill" style="width:43%;background:#FF4655"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">HS%</div>
+      <div class="stat-value" style="color:#f59e0b">17<span class="stat-unit">%</span></div>
+      <div class="stat-bar"><div class="stat-bar-fill" style="width:42%;background:#f59e0b"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ACS</div>
+      <div class="stat-value" style="color:#f59e0b">188</div>
+      <div class="stat-bar"><div class="stat-bar-fill" style="width:47%;background:#f59e0b"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">WIN%</div>
+      <div class="stat-value" style="color:#FF4655">42<span class="stat-unit">%</span></div>
+      <div class="stat-bar"><div class="stat-bar-fill" style="width:42%;background:#FF4655"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">直近5試合</div>
+    <div class="match-item"><div class="match-result loss">L</div><div class="match-body"><div class="match-agent">Jett</div><div class="match-map">Ascent · 9:13</div></div><div><div class="match-kda">14/18/3</div><div class="match-acs">ACS 201</div></div></div>
+    <div class="match-item"><div class="match-result win">W</div><div class="match-body"><div class="match-agent">Reyna</div><div class="match-map">Haven · 13:8</div></div><div><div class="match-kda">22/14/1</div><div class="match-acs">ACS 248</div></div></div>
+    <div class="match-item"><div class="match-result loss">L</div><div class="match-body"><div class="match-agent">Jett</div><div class="match-map">Bind · 7:13</div></div><div><div class="match-kda">9/16/2</div><div class="match-acs">ACS 148</div></div></div>
+    <div class="match-item"><div class="match-result loss">L</div><div class="match-body"><div class="match-agent">Neon</div><div class="match-map">Lotus · 10:13</div></div><div><div class="match-kda">16/19/4</div><div class="match-acs">ACS 192</div></div></div>
+    <div class="match-item"><div class="match-result win">W</div><div class="match-body"><div class="match-agent">Jett</div><div class="match-map">Ascent · 13:6</div></div><div><div class="match-kda">20/11/5</div><div class="match-acs">ACS 276</div></div></div>
+  </div>
+  <a href="#" style="display:flex;align-items:center;gap:10px;background:white;border:1.5px solid var(--border);border-radius:16px;padding:14px 16px;text-decoration:none;color:var(--text);font-weight:700;font-size:14px;box-shadow:var(--card-shadow)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4655" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    <div>tracker.gg で詳細を見る<div style="font-size:11px;color:var(--muted);font-weight:400">全スタッツ・エージェント・マップ別</div></div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;color:var(--muted)"><path d="M9 18l6-6-6-6"/></svg>
+  </a>
+</div>
+
+<!-- ===== AI診断 ===== -->
+<div class="tab-panel" id="panel-diag">
+  <div id="diag-content"></div>
+</div>
+
+<!-- ===== ポジション ===== -->
+<div class="tab-panel" id="panel-pos">
+  <div class="pos-summary">
+    <div class="pos-num-card"><div class="pos-num danger">46%</div><div class="pos-num-label">孤立デス率</div></div>
+    <div class="pos-num-card"><div class="pos-num danger">2</div><div class="pos-num-label">固定化マップ</div></div>
+    <div class="pos-num-card"><div class="pos-num">87</div><div class="pos-num-label">総デス数</div></div>
+  </div>
+
+  <div class="map-tabs">
+    <button class="map-tab active" onclick="switchMap('Ascent',this)">Ascent</button>
+    <button class="map-tab" onclick="switchMap('Haven',this)">Haven</button>
+    <button class="map-tab" onclick="switchMap('Bind',this)">Bind</button>
+  </div>
+
+  <!-- 攻守トグル -->
+  <div class="phase-toggle">
+    <button class="phase-btn active" onclick="switchPhase('all',this)">すべて</button>
+    <button class="phase-btn attack" onclick="switchPhase('attack',this)">⚔ 攻め</button>
+    <button class="phase-btn defense" onclick="switchPhase('defense',this)">🛡 守り</button>
+  </div>
+
+  <!-- ヒートマップ -->
+  <div class="heatmap-wrap" id="hw-Ascent">
+    <canvas id="canvas-Ascent" width="400" height="260"></canvas>
+    <div class="heatmap-phase-label all" id="phase-label-Ascent">ALL</div>
+    <div class="heatmap-legend">
+      <div class="legend-dot" style="background:#FF4655"></div><span class="legend-label">デス</span>
+      <div class="legend-dot" style="background:#f59e0b;margin-left:6px"></div><span class="legend-label">集中</span>
+    </div>
+  </div>
+  <div class="heatmap-wrap" id="hw-Haven" style="display:none">
+    <canvas id="canvas-Haven" width="400" height="260"></canvas>
+    <div class="heatmap-phase-label all" id="phase-label-Haven">ALL</div>
+    <div class="heatmap-legend">
+      <div class="legend-dot" style="background:#FF4655"></div><span class="legend-label">デス</span>
+      <div class="legend-dot" style="background:#f59e0b;margin-left:6px"></div><span class="legend-label">集中</span>
+    </div>
+  </div>
+  <div class="heatmap-wrap" id="hw-Bind" style="display:none">
+    <canvas id="canvas-Bind" width="400" height="260"></canvas>
+    <div class="heatmap-phase-label all" id="phase-label-Bind">ALL</div>
+    <div class="heatmap-legend">
+      <div class="legend-dot" style="background:#FF4655"></div><span class="legend-label">デス</span>
+      <div class="legend-dot" style="background:#f59e0b;margin-left:6px"></div><span class="legend-label">集中</span>
+    </div>
+  </div>
+
+  <!-- インサイト（フェーズ別） -->
+  <div id="insights-Ascent">
+    <div class="pos-insight red" id="insight-fixed-Ascent">
+      <div class="pos-insight-icon">📌</div>
+      <div>
+        <div class="pos-insight-title">ポジション固定化 (守り: 52%のデスが同エリア)</div>
+        <div class="pos-insight-desc">守りでAメインにほぼ毎ラウンド立っており、敵に完全に読まれています。守りのポジションをラウンドごとにローテーションしてください。</div>
+      </div>
+    </div>
+    <div class="pos-insight red">
+      <div class="pos-insight-icon">⚠️</div>
+      <div>
+        <div class="pos-insight-title">孤立デスが54% (攻め側で多発)</div>
+        <div class="pos-insight-desc">攻めのエントリー時に単独で突っ込んでいます。スキルを使ってから複数人でエントリーするか、クリアリングを徹底しましょう。</div>
+      </div>
+    </div>
+  </div>
+  <div id="insights-Haven" style="display:none">
+    <div class="pos-insight yellow">
+      <div class="pos-insight-icon">👀</div>
+      <div>
+        <div class="pos-insight-title">孤立デスが28% (守り側)</div>
+        <div class="pos-insight-desc">守りでCショートに単独で出すぎています。ピーク前に味方のロケーションを確認しましょう。</div>
+      </div>
+    </div>
+  </div>
+  <div id="insights-Bind" style="display:none">
+    <div class="pos-insight green">
+      <div class="pos-insight-icon">✅</div>
+      <div>
+        <div class="pos-insight-title">Bind は問題なし</div>
+        <div class="pos-insight-desc">攻守ともにポジションのパターンは読まれにくく、孤立デスも少ない状態です。</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="pos-note">※ 実際のアカウントで検索するとリアルタイムの座標データが表示されます</p>
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><span class="nav-label">ホーム</span></a>
+  <a class="nav-item" href="knowledge.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="nav-label">知識</span></a>
+  <a class="nav-item active" href="#"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="nav-label">トラッカー</span></a>
+  <a class="nav-item" href="routine.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><span class="nav-label">ルーティン</span></a>
+  <a class="nav-item" href="goal.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></div><span class="nav-label">目標</span></a>
+</nav>
+
+<script>
+// ========== ランクベンチマーク ==========
+const BENCHMARKS = {
+  'Iron':      { hs:10, kd:0.75, acs:120, assists:1.0, label:'アイアン帯' },
+  'Bronze':    { hs:13, kd:0.85, acs:145, assists:1.3, label:'ブロンズ帯' },
+  'Silver':    { hs:15, kd:0.95, acs:165, assists:1.6, label:'シルバー帯' },
+  'Gold':      { hs:17, kd:1.05, acs:185, assists:1.9, label:'ゴールド帯' },
+  'Platinum':  { hs:19, kd:1.10, acs:205, assists:2.1, label:'プラチナ帯' },
+  'Diamond':   { hs:22, kd:1.20, acs:230, assists:2.4, label:'ダイヤ帯' },
+  'Ascendant': { hs:24, kd:1.30, acs:255, assists:2.7, label:'アセン帯' },
+  'Immortal':  { hs:26, kd:1.40, acs:280, assists:3.0, label:'イモタル帯' },
+  'Radiant':   { hs:30, kd:1.60, acs:320, assists:3.2, label:'レディアント帯' },
+};
+
+// デモ用スタッツ（Diamond 2 プレイヤー想定）
+const DEMO_STATS = {
+  hs: 17, kd: 0.87, acs: 188, assists: 2.3,
+  winPct: 42, matchCount: 10, currentRank: 'Diamond'
+};
+
+// ========== 攻守別デスデータ ==========
+const DEATHS = {
+  Ascent: {
+    attack:  [{x:290,y:60},{x:300,y:65},{x:285,y:58},{x:310,y:55},{x:295,y:62}, // Bメイン集中（攻め側固定化）
+              {x:308,y:50},{x:62,y:200},{x:250,y:180},{x:130,y:240}],
+    defense: [{x:170,y:88},{x:175,y:92},{x:168,y:82},{x:173,y:97},{x:165,y:90}, // Aメイン集中（守り固定化）
+              {x:178,y:85},{x:60,y:195},{x:130,y:55},{x:345,y:230}]
+  },
+  Haven: {
+    attack:  [{x:315,y:75},{x:308,y:82},{x:105,y:142},{x:198,y:195},{x:248,y:112}],
+    defense: [{x:158,y:232},{x:288,y:165},{x:335,y:105},{x:118,y:78},{x:218,y:252}]
+  },
+  Bind: {
+    attack:  [{x:82,y:115},{x:278,y:195},{x:198,y:78},{x:148,y:232}],
+    defense: [{x:318,y:138},{x:98,y:175},{x:258,y:98},{x:178,y:215},{x:238,y:158}]
+  }
+};
+
+let currentMap   = 'Ascent';
+let currentPhase = 'all'; // 'all' | 'attack' | 'defense'
+
+// ========== AI診断 動的生成 ==========
+function buildDiag() {
+  const { hs, kd, acs, assists, matchCount, currentRank } = DEMO_STATS;
+  const bench = BENCHMARKS[currentRank] || BENCHMARKS['Diamond'];
+  // 次のランク帯ベンチマーク（目標）
+  const rankKeys = Object.keys(BENCHMARKS);
+  const nextRankKey = rankKeys[Math.min(rankKeys.indexOf(currentRank) + 1, rankKeys.length - 1)];
+  const target = BENCHMARKS[nextRankKey];
+
+  let score = 0;
+  const items = [];
+
+  // HS%
+  const hsDiff = bench.hs - hs;
+  const hsTarget = target.hs;
+  if (hs < bench.hs - 4) {
+    items.push({ sev:'bad', icon:'🎯', key:'HS率', val:`${hs}%`, vc:'bad',
+      text: `<strong>${bench.label}平均(${bench.hs}%)より${hsDiff}%低い</strong>状態です。初弾を外してスプレー撃ちに逃げる癖があります。まず<strong class="warn">${hsTarget}%</strong>を目標に、初弾1発を頭に当てる意識だけに集中しましょう。`,
+      bar: { user: hs, bench: bench.hs, target: hsTarget, max: 40 },
+      btn: 'マイクロフリック練習を見る', focus: 'aim-microflick' });
+  } else if (hs < bench.hs) {
+    items.push({ sev:'warn', icon:'🎯', key:'HS率', val:`${hs}%`, vc:'warn',
+      text: `<strong class="warn">${bench.label}平均まであと${hsDiff}%</strong>。クロスヘアプレイスメントを強化すれば次のランクが見えてきます。`,
+      bar: { user: hs, bench: bench.hs, target: hsTarget, max: 40 },
+      btn: 'クロスヘア理論を学ぶ', focus: 'aim-crosshair' }), score++;
+  } else {
+    items.push({ sev:'good', icon:'🎯', key:'HS率', val:`${hs}%`, vc:'good', text:null }), score+=2;
+  }
+
+  // K/D
+  const kdDiff = (bench.kd - kd).toFixed(2);
+  if (kd < bench.kd - 0.15) {
+    items.push({ sev:'bad', icon:'💀', key:'K/D', val:kd.toFixed(2), vc:'bad',
+      text: `<strong>${bench.label}平均(${bench.kd})より${kdDiff}低い</strong>です。単独でのピークを避け、スキルとのコンボを意識してください。目標: <strong class="warn">${target.kd}</strong>`,
+      btn: 'ポジショニング理論を見る', focus: 'positioning' });
+  } else if (kd < bench.kd) {
+    items.push({ sev:'warn', icon:'💀', key:'K/D', val:kd.toFixed(2), vc:'warn',
+      text: `<strong class="warn">${bench.label}平均まであと${kdDiff}</strong>。トレードデスを減らすだけで到達できます。`,
+      btn: 'トレード理論を学ぶ', focus: 'trade' }), score++;
+  } else {
+    items.push({ sev:'good', icon:'💀', key:'K/D', val:kd.toFixed(2), vc:'good', text:null }), score+=2;
+  }
+
+  // ACS
+  const acsDiff = bench.acs - acs;
+  if (acs < bench.acs - 25) {
+    items.push({ sev:'bad', icon:'⚡', key:'ACS', val:acs, vc:'bad',
+      text: `<strong>${bench.label}平均(${bench.acs})より${acsDiff}低い</strong>です。ファーストコンタクトのダメージ効率を上げましょう。目標: <strong class="warn">${target.acs}</strong>`,
+      btn: 'インパクト向上の理論を見る', focus: 'acs-impact' });
+  } else if (acs < bench.acs) {
+    items.push({ sev:'warn', icon:'⚡', key:'ACS', val:acs, vc:'warn',
+      text: `<strong class="warn">${bench.label}平均まであと${acsDiff}</strong>。あと少しで次のランクのラインです。`,
+      btn: 'ACS向上のコツを見る', focus: 'acs-impact' }), score++;
+  } else {
+    items.push({ sev:'good', icon:'⚡', key:'ACS', val:acs, vc:'good', text:null }), score+=2;
+  }
+
+  // アシスト
+  const asDiff = (bench.assists - assists).toFixed(1);
+  if (assists < bench.assists - 0.5) {
+    items.push({ sev:'warn', icon:'🤝', key:'アシスト/試合', val:assists, vc:'warn',
+      text: `<strong class="warn">${bench.label}平均(${bench.assists})より${asDiff}少ない</strong>です。クロスファイアとスキルサポートを増やしましょう。`,
+      btn: 'クロスファイア理論を学ぶ', focus: 'crossfire' }), score++;
+  } else {
+    items.push({ sev:'good', icon:'🤝', key:'アシスト/試合', val:assists, vc:'good', text:null }), score+=2;
+  }
+
+  const pct = Math.round((score / (items.length * 2)) * 100);
+  const col = pct>=70?'#22c55e':pct>=40?'#f59e0b':'#FF4655';
+  const lbl = pct>=70?'良好':pct>=40?'改善余地あり':'要強化';
+  const circ = 2*Math.PI*26;
+  const offset = circ - (pct/100)*circ;
+
+  const scoreHTML = `
+    <div class="diag-score-wrap">
+      <div class="diag-score-circle">
+        <svg viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="26" stroke="#f0e0e2" stroke-width="6"/>
+          <circle cx="32" cy="32" r="26" stroke="${col}" stroke-width="6"
+            stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round"/>
+        </svg>
+        <span class="diag-score-num" style="color:${col}">${pct}</span>
+      </div>
+      <div>
+        <div class="diag-score-sub">コーチングスコア</div>
+        <div class="diag-score-label" style="color:${col}">${lbl}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">直近${matchCount}試合 / 比較: <strong style="color:${col}">${bench.label}</strong>平均</div>
+      </div>
+    </div>`;
+
+  const itemsHTML = items.map(item => `
+    <div class="diag-item">
+      <div class="diag-sev ${item.sev}">${item.icon}</div>
+      <div class="diag-content">
+        <div class="diag-row">
+          <span class="diag-key">${item.key}</span>
+          <span class="diag-val ${item.vc}">${item.val}</span>
+        </div>
+        ${item.text
+          ? `<div class="diag-text">${item.text}</div>
+             ${item.bar ? benchBar(item.bar) : ''}
+             <a class="diag-btn" href="knowledge.html?focus=${item.focus}">${item.btn} →</a>`
+          : `<div class="diag-ok">✓ ${bench.label}平均を上回っています</div>`
+        }
+      </div>
+    </div>`).join('');
+
+  document.getElementById('diag-content').innerHTML = `${scoreHTML}<div class="card">${itemsHTML}</div>`;
+}
+
+function benchBar({ user, bench, target, max }) {
+  const uPct = Math.min(100, (user/max)*100);
+  const bPct = Math.min(100, (bench/max)*100);
+  const tPct = Math.min(100, (target/max)*100);
+  return `
+    <div class="bench-bar" style="margin-bottom:6px">
+      <div class="bench-bar-track" style="position:relative">
+        <div class="bench-bar-fill" style="width:${uPct}%;background:#FF4655"></div>
+        <div style="position:absolute;top:-3px;bottom:-3px;left:${bPct}%;width:2px;background:var(--muted);border-radius:2px"></div>
+        <div style="position:absolute;top:-3px;bottom:-3px;left:${tPct}%;width:2px;background:var(--green);border-radius:2px"></div>
+      </div>
+      <span class="bench-bar-label" style="color:#FF4655;font-size:10px;font-weight:700;min-width:28px">自分</span>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:4px">
+      <span style="font-size:10px;color:var(--muted)">｜帯平均: <strong>${bench}</strong></span>
+      <span style="font-size:10px;color:var(--green)">｜目標: <strong>${target}</strong></span>
+    </div>`;
+}
+
+// ========== タブ切替 ==========
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+}
+
+// ========== マップ切替 ==========
+function switchMap(name, btn) {
+  btn.closest('.map-tabs').querySelectorAll('.map-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMap = name;
+  ['Ascent','Haven','Bind'].forEach(m => {
+    const hw = document.getElementById(`hw-${m}`);
+    const ins = document.getElementById(`insights-${m}`);
+    if (hw) hw.style.display = m===name?'block':'none';
+    if (ins) ins.style.display = m===name?'block':'none';
+  });
+  redraw();
+}
+
+// ========== フェーズ切替 ==========
+function switchPhase(phase, btn) {
+  document.querySelectorAll('.phase-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPhase = phase;
+  redraw();
+}
+
+function getDeaths(mapName, phase) {
+  const d = DEATHS[mapName] || {attack:[],defense:[]};
+  if (phase === 'attack')  return d.attack;
+  if (phase === 'defense') return d.defense;
+  return [...d.attack, ...d.defense];
+}
+
+function redraw() {
+  const deaths = getDeaths(currentMap, currentPhase);
+  drawHeatmap(`canvas-${currentMap}`, deaths, currentPhase);
+  // フェーズラベル更新
+  const lbl = document.getElementById(`phase-label-${currentMap}`);
+  if (lbl) {
+    const labels = { all:'ALL', attack:'⚔ 攻め', defense:'🛡 守り' };
+    lbl.textContent = labels[currentPhase];
+    lbl.className = `heatmap-phase-label ${currentPhase}`;
+  }
+}
+
+// ========== ヒートマップ描画 ==========
+function drawHeatmap(canvasId, deaths, phase) {
+  const canvas = document.getElementById(canvasId); if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // 背景
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0,0,W,H);
+
+  // グリッド
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1;
+  for(let i=0;i<=8;i++){
+    ctx.beginPath();ctx.moveTo(i*(W/8),0);ctx.lineTo(i*(W/8),H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i*(H/8));ctx.lineTo(W,i*(H/8));ctx.stroke();
+  }
+
+  // マップ名
+  const mapName = canvasId.replace('canvas-','');
+  ctx.fillStyle='rgba(255,255,255,0.05)'; ctx.font='bold 38px sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(mapName.toUpperCase(), W/2, H/2);
+
+  // マップ輪郭
+  ctx.strokeStyle='rgba(255,255,255,0.10)'; ctx.lineWidth=1.5; ctx.beginPath();
+  if(mapName==='Ascent'){
+    ctx.rect(35,25,330,210);
+    ctx.moveTo(35,130);ctx.lineTo(365,130);
+    ctx.moveTo(155,25);ctx.lineTo(155,130);
+    ctx.moveTo(235,130);ctx.lineTo(235,235);
+  } else if(mapName==='Haven'){
+    ctx.rect(28,35,344,190);
+    ctx.moveTo(28,135);ctx.lineTo(372,135);
+    ctx.moveTo(118,35);ctx.lineTo(118,225);
+    ctx.moveTo(252,35);ctx.lineTo(252,225);
+  } else {
+    ctx.rect(38,35,324,190);
+    ctx.moveTo(200,35);ctx.lineTo(200,225);
+  }
+  ctx.stroke();
+
+  if(deaths.length === 0){
+    ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.font='13px sans-serif';
+    ctx.fillText('このフェーズのデータなし', W/2, H/2+30);
+    return;
+  }
+
+  // フェーズカラー
+  const dotColor = phase==='defense' ? '#3b82f6' : '#FF4655';
+  const glowColor = phase==='defense' ? 'rgba(59,130,246,' : 'rgba(255,70,85,';
+
+  // ヒートグロー
+  deaths.forEach(d=>{
+    const gr=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,32);
+    gr.addColorStop(0,glowColor+'0.38)'); gr.addColorStop(1,glowColor+'0)');
+    ctx.beginPath();ctx.arc(d.x,d.y,32,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+  });
+
+  // クラスター
+  clusterSimple(deaths,42).filter(c=>c.n>=3).forEach(c=>{
+    const r=18+c.n*5;
+    const gr=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,r);
+    gr.addColorStop(0,`rgba(245,158,11,${Math.min(0.55,0.15+c.n*0.07)})`);
+    gr.addColorStop(1,'rgba(245,158,11,0)');
+    ctx.beginPath();ctx.arc(c.x,c.y,r,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+    ctx.fillStyle='#f59e0b'; ctx.font=`bold ${10+c.n}px sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(`×${c.n}`,c.x,c.y);
+  });
+
+  // ドット
+  deaths.forEach(d=>{
+    ctx.beginPath();ctx.arc(d.x,d.y,4.5,0,Math.PI*2);
+    ctx.fillStyle=dotColor;ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1.2;ctx.stroke();
+  });
+}
+
+function clusterSimple(pts, r) {
+  const used=new Array(pts.length).fill(false), out=[];
+  for(let i=0;i<pts.length;i++){
+    if(used[i]) continue;
+    const g=[pts[i]]; used[i]=true;
+    for(let j=i+1;j<pts.length;j++){
+      if(used[j]) continue;
+      const dx=pts[j].x-pts[i].x,dy=pts[j].y-pts[i].y;
+      if(Math.sqrt(dx*dx+dy*dy)<=r){g.push(pts[j]);used[j]=true;}
+    }
+    out.push({x:g.reduce((s,p)=>s+p.x,0)/g.length,y:g.reduce((s,p)=>s+p.y,0)/g.length,n:g.length});
+  }
+  return out;
+}
+
+// ========== 初期化 ==========
+window.onload = () => {
+  buildDiag();
+  // 全マップの初期描画
+  ['Ascent','Haven','Bind'].forEach(m => {
+    const d = getDeaths(m, 'all');
+    drawHeatmap(`canvas-${m}`, d, 'all');
+  });
+};
+</script>
+</body>
+</html>

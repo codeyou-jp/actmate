@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>トラッカー - ACTMATE</title>
+<style>
+  :root {
+    --red:#FF4655; --red-light:#fff0f2; --text:#111; --muted:#888;
+    --border:#f0e0e2; --card-shadow:0 2px 16px rgba(255,70,85,0.08);
+    --off-white:#fafafa; --green:#22c55e; --yellow:#f59e0b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--off-white);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;}
+
+  /* ヘッダー */
+  .header{background:var(--red);padding:48px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'';position:absolute;top:-40px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .header-label{font-size:10px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:4px;}
+
+  /* 検索 */
+  .search-area{background:white;border-bottom:1.5px solid var(--border);padding:12px 16px;}
+  .search-row{display:flex;gap:8px;}
+  .search-input{flex:1;border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;font-size:15px;font-family:inherit;outline:none;transition:border-color 0.15s;}
+  .search-input:focus{border-color:var(--red);}
+  .region-select{border:1.5px solid var(--border);border-radius:12px;padding:11px 10px;font-size:13px;font-family:inherit;outline:none;background:white;cursor:pointer;}
+  .search-btn{background:var(--red);color:white;border:none;border-radius:12px;padding:11px 16px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;}
+  .search-btn:active{opacity:0.85;}
+  .search-hint{font-size:11px;color:var(--muted);margin-top:6px;}
+
+  /* プロフィールミニ */
+  .profile-mini{display:none;align-items:center;gap:12px;padding-bottom:16px;}
+  .profile-mini.visible{display:flex;}
+  .rank-icon{font-size:28px;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);border-radius:13px;flex-shrink:0;}
+  .rank-icon img{width:36px;height:36px;object-fit:contain;}
+  .profile-mini-name{font-size:17px;font-weight:900;color:white;}
+  .profile-mini-rank{font-size:12px;color:rgba(255,255,255,0.7);margin-top:1px;}
+  .profile-mini-rr{font-size:11px;color:rgba(255,255,255,0.5);}
+
+  /* タブバー */
+  .tab-bar{display:none;background:rgba(0,0,0,0.15);}
+  .tab-bar.visible{display:flex;}
+  .tab-btn{flex:1;padding:11px 0;font-size:12px;font-weight:700;color:rgba(255,255,255,0.55);background:none;border:none;cursor:pointer;position:relative;transition:color 0.15s;font-family:inherit;}
+  .tab-btn.active{color:white;}
+  .tab-btn.active::after{content:'';position:absolute;bottom:0;left:14px;right:14px;height:2.5px;background:white;border-radius:2px 2px 0 0;}
+
+  /* 状態 */
+  .tab-panel{display:none;padding:14px 14px 110px;}
+  .tab-panel.active{display:block;}
+  .empty-state{text-align:center;padding:60px 20px;}
+  .empty-state svg{width:50px;height:50px;color:#ddd;margin-bottom:14px;}
+  .empty-state h3{font-size:16px;font-weight:800;margin-bottom:6px;}
+  .empty-state p{font-size:13px;color:var(--muted);line-height:1.7;}
+  .loading{text-align:center;padding:50px 20px;}
+  .spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading p{font-size:13px;color:var(--muted);}
+  .error-box{background:#fff5f5;border:1.5px solid #ffd0d0;border-radius:14px;padding:14px 16px;display:flex;gap:10px;align-items:flex-start;}
+  .error-box svg{width:18px;height:18px;color:var(--red);flex-shrink:0;}
+  .error-box p{font-size:13px;color:var(--red);line-height:1.5;}
+
+  /* カード */
+  .card{background:white;border:1.5px solid var(--border);border-radius:18px;padding:16px 18px;margin-bottom:10px;box-shadow:var(--card-shadow);}
+  .card-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
+
+  /* スタッツ */
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .stat-card{background:white;border:1.5px solid var(--border);border-radius:14px;padding:14px;box-shadow:var(--card-shadow);}
+  .stat-label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+  .stat-value{font-size:26px;font-weight:900;line-height:1;}
+  .stat-unit{font-size:13px;font-weight:600;color:var(--muted);}
+  .stat-bar{height:3px;background:var(--border);border-radius:100px;margin-top:8px;overflow:hidden;}
+  .stat-bar-fill{height:100%;border-radius:100px;}
+
+  /* 試合 */
+  .match-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .match-item:last-child{border-bottom:none;padding-bottom:0;}
+  .match-result{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;}
+  .match-result.win{background:rgba(34,197,94,0.1);color:var(--green);}
+  .match-result.loss{background:rgba(255,70,85,0.1);color:var(--red);}
+  .match-body{flex:1;}
+  .match-agent{font-size:13px;font-weight:700;}
+  .match-map{font-size:11px;color:var(--muted);}
+  .match-kda{font-size:13px;font-weight:700;}
+  .match-acs{font-size:11px;color:var(--muted);text-align:right;}
+
+  /* AI診断 */
+  .diag-score-wrap{background:#f8f8f8;border-radius:14px;padding:16px;display:flex;align-items:center;gap:16px;margin-bottom:10px;}
+  .diag-score-circle{width:64px;height:64px;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;}
+  .diag-score-circle svg{position:absolute;top:0;left:0;width:64px;height:64px;transform:rotate(-90deg);}
+  .diag-score-num{font-size:20px;font-weight:900;position:relative;z-index:1;}
+  .diag-score-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;font-weight:700;}
+  .diag-score-label{font-size:14px;font-weight:800;}
+  .diag-item{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .diag-item:last-child{border-bottom:none;padding-bottom:0;}
+  .diag-sev{width:34px;height:34px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .diag-sev.bad{background:rgba(255,70,85,0.1);}
+  .diag-sev.warn{background:rgba(245,158,11,0.1);}
+  .diag-sev.good{background:rgba(34,197,94,0.1);}
+  .diag-content{flex:1;}
+  .diag-row{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+  .diag-key{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+  .diag-val{font-size:13px;font-weight:900;}
+  .diag-val.bad{color:var(--red);}
+  .diag-val.warn{color:var(--yellow);}
+  .diag-val.good{color:var(--green);}
+  .diag-text{font-size:12px;line-height:1.55;margin-bottom:6px;}
+  .diag-text strong{color:var(--red);font-weight:800;background:rgba(255,70,85,0.08);padding:0 3px;border-radius:4px;}
+  .diag-text strong.ok{color:var(--green);background:rgba(34,197,94,0.08);}
+  .diag-text strong.warn{color:var(--yellow);background:rgba(245,158,11,0.08);}
+  .diag-btn{display:inline-flex;align-items:center;gap:4px;background:var(--red-light);border:1px solid #ffd0d5;border-radius:100px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--red);text-decoration:none;}
+  .diag-ok{font-size:12px;color:var(--green);font-weight:600;}
+  .bench-bar{display:flex;align-items:center;gap:6px;margin:5px 0 6px;}
+  .bench-bar-track{flex:1;height:4px;background:#eee;border-radius:100px;overflow:visible;position:relative;}
+  .bench-bar-fill{height:100%;border-radius:100px;}
+
+  /* ポジション */
+  .pos-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+  .pos-num-card{background:white;border:1.5px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center;box-shadow:var(--card-shadow);}
+  .pos-num{font-size:24px;font-weight:900;line-height:1;margin-bottom:3px;}
+  .pos-num.danger{color:var(--red);}
+  .pos-num.warn{color:var(--yellow);}
+  .pos-num.ok{color:var(--green);}
+  .pos-num-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+  .map-tabs{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;}
+  .map-tabs::-webkit-scrollbar{display:none;}
+  .map-tab{flex-shrink:0;font-size:11px;font-weight:700;padding:5px 14px;border-radius:100px;cursor:pointer;border:1.5px solid var(--border);background:white;color:var(--muted);transition:all 0.15s;font-family:inherit;}
+  .map-tab.active{background:var(--red);color:white;border-color:var(--red);}
+
+  /* 攻守トグル */
+  .phase-toggle{display:flex;gap:0;margin-bottom:10px;background:#f0f0f0;border-radius:100px;padding:3px;}
+  .phase-btn{flex:1;padding:6px 0;font-size:11px;font-weight:700;border:none;border-radius:100px;cursor:pointer;font-family:inherit;background:none;color:var(--muted);transition:all 0.18s;}
+  .phase-btn.active{background:white;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.12);}
+  .phase-btn.active.attack{color:#FF4655;}
+  .phase-btn.active.defense{color:#3b82f6;}
+
+  .heatmap-wrap{position:relative;background:#1a1a2e;border-radius:14px;overflow:hidden;margin-bottom:10px;}
+  .heatmap-wrap canvas{display:block;width:100%;height:auto;}
+  .heatmap-phase-label{position:absolute;top:8px;left:8px;font-size:10px;font-weight:800;padding:3px 10px;border-radius:100px;letter-spacing:0.5px;}
+  .heatmap-phase-label.all{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);}
+  .heatmap-phase-label.attack{background:rgba(255,70,85,0.25);color:#FF4655;}
+  .heatmap-phase-label.defense{background:rgba(59,130,246,0.25);color:#60a5fa;}
+  .heatmap-legend{position:absolute;bottom:8px;right:8px;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,0.65);border-radius:100px;padding:4px 10px;}
+  .legend-dot{width:8px;height:8px;border-radius:50%;}
+  .legend-label{font-size:9px;color:rgba(255,255,255,0.7);font-weight:600;}
+  .pos-insight{display:flex;gap:10px;padding:11px 12px;border-radius:12px;margin-bottom:8px;align-items:flex-start;}
+  .pos-insight:last-child{margin-bottom:0;}
+  .pos-insight.red{background:rgba(255,70,85,0.07);}
+  .pos-insight.yellow{background:rgba(245,158,11,0.07);}
+  .pos-insight.green{background:rgba(34,197,94,0.07);}
+  .pos-insight-icon{font-size:17px;flex-shrink:0;margin-top:1px;}
+  .pos-insight-title{font-size:12px;font-weight:700;margin-bottom:2px;}
+  .pos-insight-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+  .pos-note{font-size:10px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.6;}
+
+  .tracker-link{display:flex;align-items:center;gap:10px;background:white;border:1.5px solid var(--border);border-radius:16px;padding:14px 16px;text-decoration:none;color:var(--text);font-weight:700;font-size:14px;box-shadow:var(--card-shadow);}
+
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:white;border-top:1.5px solid var(--border);display:flex;padding:8px 0 22px;z-index:100;}
+  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;padding:4px 0;}
+  .nav-icon svg{width:22px;height:22px;color:var(--muted);}
+  .nav-label{font-size:10px;font-weight:600;color:var(--muted);}
+  .nav-item.active .nav-label{color:var(--red);}
+  .nav-item.active .nav-icon svg{color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- ヘッダー（未検索） -->
+<div class="header" id="header-search">
+  <div class="header-label">ACTMATE / トラッカー</div>
+  <div style="font-size:26px;font-weight:900;color:white;margin-bottom:16px">スタッツ検索</div>
+</div>
+
+<!-- ヘッダー（検索後） -->
+<div class="header" id="header-result" style="display:none">
+  <div class="header-label">ACTMATE / トラッカー</div>
+  <div class="profile-mini" id="profile-mini">
+    <div class="rank-icon" id="header-rank-icon">🎯</div>
+    <div>
+      <div class="profile-mini-name" id="header-name">---</div>
+      <div class="profile-mini-rank" id="header-rank">---</div>
+      <div class="profile-mini-rr" id="header-rr">--- RR</div>
+    </div>
+  </div>
+  <div class="tab-bar visible">
+    <button class="tab-btn active" onclick="switchTab('stats',this)">スタッツ</button>
+    <button class="tab-btn" onclick="switchTab('diag',this)">🧠 AI診断</button>
+    <button class="tab-btn" onclick="switchTab('pos',this)">📍 ポジション</button>
+  </div>
+</div>
+
+<!-- 検索フォーム -->
+<div class="search-area" id="search-area">
+  <div class="search-row">
+    <input class="search-input" id="riot-input" type="text" placeholder="RiotID#JP1" autocomplete="off" onkeydown="if(event.key==='Enter')doSearch()">
+    <select class="region-select" id="region-select">
+      <option value="ap">AP</option>
+      <option value="na">NA</option>
+      <option value="eu">EU</option>
+      <option value="kr">KR</option>
+    </select>
+    <button class="search-btn" onclick="doSearch()">検索</button>
+  </div>
+  <div class="search-hint">例: PlayerName#JP1</div>
+</div>
+
+<!-- 空状態 -->
+<div id="state-empty" style="padding:14px 14px 110px">
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+    <h3>Riot IDを入力してください</h3>
+    <p>名前とタグ（#以降）を入力して<br>スタッツと弱点診断を確認できます</p>
+  </div>
+</div>
+
+<!-- ローディング -->
+<div id="state-loading" style="display:none;padding:14px 14px 110px">
+  <div class="loading"><div class="spinner"></div><p>データを取得中...</p></div>
+</div>
+
+<!-- エラー -->
+<div id="state-error" style="display:none;padding:14px 14px 110px">
+  <div class="error-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <p id="error-msg"></p>
+  </div>
+</div>
+
+<!-- タブ①：スタッツ -->
+<div class="tab-panel" id="panel-stats">
+  <div class="stats-grid" id="stats-grid"></div>
+  <div class="card" id="matches-card"></div>
+  <a id="tracker-link" href="#" target="_blank" class="tracker-link">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4655" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    <div>tracker.gg で詳細を見る<div style="font-size:11px;color:var(--muted);font-weight:400">全スタッツ・エージェント・マップ別</div></div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;color:var(--muted)"><path d="M9 18l6-6-6-6"/></svg>
+  </a>
+</div>
+
+<!-- タブ②：AI診断 -->
+<div class="tab-panel" id="panel-diag">
+  <div id="diag-score-area"></div>
+  <div class="card" id="diag-items-card"></div>
+</div>
+
+<!-- タブ③：ポジション -->
+<div class="tab-panel" id="panel-pos">
+  <div class="pos-summary" id="pos-summary"></div>
+  <div class="map-tabs" id="map-tabs"></div>
+  <!-- 攻守トグル -->
+  <div class="phase-toggle" id="phase-toggle" style="display:none">
+    <button class="phase-btn active" onclick="switchPhase('all',this)">すべて</button>
+    <button class="phase-btn attack" onclick="switchPhase('attack',this)">⚔ 攻め</button>
+    <button class="phase-btn defense" onclick="switchPhase('defense',this)">🛡 守り</button>
+  </div>
+  <div id="heatmaps-area"></div>
+  <div id="insights-area"></div>
+  <p class="pos-note" id="pos-note" style="display:none">※ 座標データはhenrikdev APIのkill_eventsから取得。試合数が少ないと精度が下がります。</p>
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><span class="nav-label">ホーム</span></a>
+  <a class="nav-item" href="knowledge.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="nav-label">知識</span></a>
+  <a class="nav-item active" href="tracker.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="nav-label">トラッカー</span></a>
+  <a class="nav-item" href="routine.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><span class="nav-label">ルーティン</span></a>
+  <a class="nav-item" href="goal.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></div><span class="nav-label">目標</span></a>
+</nav>
+
+<script>
+// ========== ランクベンチマーク ==========
+const BENCHMARKS = {
+  'Iron':      {hs:10,kd:0.75,acs:120,assists:1.0,label:'アイアン帯'},
+  'Bronze':    {hs:13,kd:0.85,acs:145,assists:1.3,label:'ブロンズ帯'},
+  'Silver':    {hs:15,kd:0.95,acs:165,assists:1.6,label:'シルバー帯'},
+  'Gold':      {hs:17,kd:1.05,acs:185,assists:1.9,label:'ゴールド帯'},
+  'Platinum':  {hs:19,kd:1.10,acs:205,assists:2.1,label:'プラチナ帯'},
+  'Diamond':   {hs:22,kd:1.20,acs:230,assists:2.4,label:'ダイヤ帯'},
+  'Ascendant': {hs:24,kd:1.30,acs:255,assists:2.7,label:'アセン帯'},
+  'Immortal':  {hs:26,kd:1.40,acs:280,assists:3.0,label:'イモタル帯'},
+  'Radiant':   {hs:30,kd:1.60,acs:320,assists:3.2,label:'レディアント帯'},
+};
+function getBench(rankStr) {
+  for (const key of Object.keys(BENCHMARKS)) {
+    if (rankStr && rankStr.startsWith(key)) return {key, ...BENCHMARKS[key]};
+  }
+  return {key:'Diamond', ...BENCHMARKS['Diamond']};
+}
+function getNextBench(currentKey) {
+  const keys = Object.keys(BENCHMARKS);
+  const idx = keys.indexOf(currentKey);
+  return BENCHMARKS[keys[Math.min(idx+1, keys.length-1)]];
+}
+
+// ========== ランク画像 ==========
+const RANK_TO_FILE = {
+  'Iron 1':'iron1','Iron 2':'iron2','Iron 3':'iron3',
+  'Bronze 1':'bronze1','Bronze 2':'bronze2','Bronze 3':'bronze3',
+  'Silver 1':'silver1','Silver 2':'silver2','Silver 3':'silver3',
+  'Gold 1':'gold1','Gold 2':'gold2','Gold 3':'gold3',
+  'Platinum 1':'plat1','Platinum 2':'plat2','Platinum 3':'plat3',
+  'Diamond 1':'dia1','Diamond 2':'dia2','Diamond 3':'dia3',
+  'Ascendant 1':'asc1','Ascendant 2':'asc2','Ascendant 3':'asc3',
+  'Immortal 1':'imm1','Immortal 2':'imm2','Immortal 3':'imm3',
+  'Radiant':'radiant',
+};
+
+let _posData = null;
+let _currentMap = '';
+let _currentPhase = 'all';
+let _mapData = {}; // valorant-api.com のマップデータキャッシュ
+
+// 起動時にマップデータを取得
+async function loadMapData() {
+  try {
+    const res = await fetch('https://valorant-api.com/v1/maps');
+    const json = await res.json();
+    (json.data || []).forEach(m => {
+      if (!m.displayName) return;
+      _mapData[m.displayName] = {
+        img: m.displayIcon || null,
+        xMul: m.xMultiplier || 0,
+        yMul: m.yMultiplier || 0,
+        xAdd: m.xScalarToAdd || 0,
+        yAdd: m.yScalarToAdd || 0,
+      };
+    });
+  } catch(e) { console.warn('マップデータ取得失敗', e); }
+}
+loadMapData();
+
+// ========== 保存・復元 ==========
+function loadSaved() {
+  try {
+    const s = localStorage.getItem('actmate_tracker_search');
+    if (s) { const {name,region}=JSON.parse(s); document.getElementById('riot-input').value=name||''; document.getElementById('region-select').value=region||'ap'; }
+  } catch(e){}
+}
+
+// ========== 状態管理 ==========
+function setState(state, msg) {
+  ['state-empty','state-loading','state-error'].forEach(id => document.getElementById(id).style.display='none');
+  if (state !== 'result') document.getElementById(`state-${state}`).style.display='block';
+  if (msg) document.getElementById('error-msg').textContent=msg;
+  const isResult = state==='result';
+  document.getElementById('header-search').style.display = isResult?'none':'block';
+  document.getElementById('header-result').style.display = isResult?'block':'none';
+  ['stats','diag','pos'].forEach(t => {
+    const p = document.getElementById(`panel-${t}`);
+    p.style.display = '';  // インラインstyleをリセット、CSSクラスに委ねる
+    p.classList.remove('active');
+  });
+  if (isResult) {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.tab-btn').classList.add('active');
+    document.getElementById('panel-stats').classList.add('active');
+  }
+}
+
+// ========== APIキー設定 ==========
+// henrikdev.xyz でAPIキーを取得して下記に貼り付け
+// 取得U

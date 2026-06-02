@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>プロ練習DB - ACTMATE</title>
+<style>
+  :root {
+    --red: #FF4655;
+    --red-light: #fff0f2;
+    --text: #111;
+    --muted: #777;
+    --border: #eee;
+    --card-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    --off-white: #f7f7f8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--off-white); color: var(--text);
+    max-width: 430px; margin: 0 auto; min-height: 100vh;
+  }
+
+  .hero {
+    background: #0d0f10; padding: 52px 24px 28px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 30%, rgba(255,70,85,0.13) 0%, transparent 55%);
+  }
+  .hero-label { font-size: 10px; font-weight: 700; letter-spacing: 3px; color: rgba(255,255,255,0.35); text-transform: uppercase; margin-bottom: 8px; }
+  .hero-title { font-size: 24px; font-weight: 900; color: white; line-height: 1.3; margin-bottom: 6px; }
+  .hero-title span { color: var(--red); }
+  .hero-sub { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+  .hero-note { margin-top: 14px; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.08); border-radius: 100px; padding: 6px 12px; font-size: 11px; color: rgba(255,255,255,0.5); }
+
+  /* リージョンタブ */
+  .region-tabs {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    background: #0d0f10; border-bottom: 1px solid #222;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .region-tab {
+    padding: 11px 4px; text-align: center; cursor: pointer;
+    border-bottom: 3px solid transparent; transition: all 0.2s;
+    font-family: inherit; background: none;
+    border-top: none; border-left: none; border-right: none;
+  }
+  .region-tab-icon { font-size: 16px; display: block; margin-bottom: 2px; }
+  .region-tab-name { font-size: 9px; font-weight: 700; letter-spacing: 1px; color: rgba(255,255,255,0.35); text-transform: uppercase; }
+  .region-tab.active .region-tab-name { color: white; }
+  .region-tab[data-r="pac"].active  { border-bottom-color: #0ea5e9; }
+  .region-tab[data-r="am"].active   { border-bottom-color: #ef4444; }
+  .region-tab[data-r="emea"].active { border-bottom-color: #8b5cf6; }
+  .region-tab[data-r="cn"].active   { border-bottom-color: #f59e0b; }
+
+  .region-content { display: none; padding: 14px 14px 110px; }
+  .region-content.active { display: block; }
+
+  /* リージョンヘッダー */
+  .rh { border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px; }
+  .rh svg { width: 22px; height: 22px; flex-shrink: 0; margin-top: 2px; }
+  .rh-title { font-size: 15px; font-weight: 900; }
+  .rh-sub { font-size: 11px; margin-top: 3px; opacity: 0.75; line-height: 1.5; }
+  .rh.pac  { background: #f0f9ff; color: #0369a1; }
+  .rh.am   { background: #fff5f5; color: #b91c1c; }
+  .rh.emea { background: #f5f3ff; color: #6d28d9; }
+  .rh.cn   { background: #fffbeb; color: #b45309; }
+
+  /* プレイヤーカード */
+  .pc { background: white; border: 1px solid var(--border); border-radius: 18px; margin-bottom: 10px; box-shadow: var(--card-shadow); overflow: hidden; }
+  .ph { padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+  .pa { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; font-style: italic; flex-shrink: 0; color: white; }
+  .pi { flex: 1; min-width: 0; }
+  .pname { font-size: 15px; font-weight: 900; }
+  .pmeta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .pbadges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+  .badge { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
+  .bg { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }   /* growth */
+  .ba { background: var(--red-light); color: var(--red); border: 1px solid #ffd0d5; } /* aim */
+  .bm { background: #fdf4ff; color: #9333ea; border: 1px solid #e9d5ff; }  /* mental */
+  .bs { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }  /* story */
+
+  /* 成長ストーリー */
+  .story-bar {
+    margin: 0 0 0 54px;
+    padding: 0 16px 12px 0;
+    font-size: 11px; color: var(--muted); line-height: 1.65;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .story-bar strong { color: var(--text); }
+
+  .pchev { color: #ccc; flex-shrink: 0; padding-top: 2px; transition: transform 0.2s; }
+  .pc.open .pchev { transform: rotate(90deg); }
+  .pchev svg { width: 16px; height: 16px; }
+
+  .pbody { display: none; border-top: 1px solid #f5f5f5; }
+  .pc.open .pbody { display: block; }
+
+  /* ルーティンアイテム */
+  .rr { display: flex; align-items: flex-start; gap: 11px; padding: 12px 16px; border-bottom: 1px solid #f5f5f5; }
+  .rr:last-child { border-bottom: none; }
+  .rnum { width: 22px; height: 22px; border-radius: 6px; font-size: 10px; font-weight: 900; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .rbody { flex: 1; min-width: 0; }
+  .rtitle { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+  .rdesc { font-size: 11px; color: var(--muted); line-height: 1.55; }
+  .rfoot { display: flex; align-items: center; justify-content: space-between; margin-top: 7px; gap: 6px; }
+  .rtags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tag { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 100px; border: 1px solid var(--border); color: var(--muted); }
+  .tag.aim     { background: var(--red-light); color: var(--red); border-color: #ffd0d5; }
+  .tag.dm      { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+  .tag.range   { background: #f0fdf4; color: #16a34a; border-color: #86efac; }
+  .tag.mental  { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+  .tag.phy     { background: #fdf4ff; color: #9333ea; border-color: #e9d5ff; }
+  .rtime { font-size: 10px; color: var(--muted); font-weight: 600; white-space: nowrap; padding-top: 2px; flex-shrink: 0; }
+
+  .addbtn { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 100px; border: none; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; background: var(--red); color: white; }
+  .addbtn.added { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; cursor: default; }
+  .addbtn:active { opacity: 0.8; }
+
+  .quote { margin: 0 16px 14px; padding: 10px 14px; background: #f9f9f9; border-radius: 10px; border-left: 3px solid var(--red); }
+  .quote p { font-size: 11px; color: #555; line-height: 1.7; font-style: italic; }
+  .quote cite { font-size: 10px; color: var(--red); font-style: normal; font-weight: 700; display: block; margin-top: 4px; }
+
+  .toast { position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; z-index: 999; }
+  .toast.show { opacity: 1; }
+
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1.5px solid var(--border); display: flex; padding: 8px 0 22px; z-index: 100; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; padding: 4px 0; }
+  .nav-icon svg { width: 22px; height: 22px; color: var(--muted); }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .nav-item.active .nav-label { color: var(--red); }
+  .nav-item.active .nav-icon svg { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-label">ACTMATE — Pro Practice Database</div>
+  <div class="hero-title">世界4大リーグ<br><span>「伸びた人」のルーティン大全</span></div>
+  <div class="hero-sub">T1・T2関係なし。Valorant黎明期〜2026年に<br>実際にめちゃくちゃ成長した選手だけを収録。</div>
+  <div class="hero-note">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    ルーティンはワンタップで今日の練習に追加できます
+  </div>
+</div>
+
+<div class="region-tabs">
+  <button class="region-tab active" data-r="pac" onclick="sw('pac',this)">
+    <span class="region-tab-icon">🌏</span>
+    <span class="region-tab-name">Pacific</span>
+  </button>
+  <button class="region-tab" data-r="am" onclick="sw('am',this)">
+    <span class="region-tab-icon">🌎</span>
+    <span class="region-tab-name">Americas</span>
+  </button>
+  <button class="region-tab" data-r="emea" onclick="sw('emea',this)">
+    <span class="region-tab-icon">🌍</span>
+    <span class="region-tab-name">EMEA</span>
+  </button>
+  <button class="region-tab" data-r="cn" onclick="sw('cn',this)">
+    <span class="region-tab-icon">🐉</span>
+    <span class="region-tab-name">China</span>
+  </button>
+</div>
+
+<!-- ======= PACIFIC ======= -->
+<div class="region-content active" id="r-pac">
+  <div class="rh pac">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <div>
+      <div class="rh-title">Pacific — 爆速フリックと超感覚</div>
+      <div class="rh-sub">タイの無名少年からChampions MVP、SEAアンダードッグから世界2位まで。スター誕生の現場。</div>
+    </div>
+  </div>
+
+  <!-- primmie -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#0369a1">p</div>
+      <div class="pi">
+        <div class="pname">primmie</div>
+        <div class="pmeta">Paper Rex · タイ · Jett/Neon</div>
+        <div class="pbadges">
+          <span class="badge bg">Champions 2024出場</span>
+          <span class="badge bs">サイン2日後にMVP</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      タイの田舎町出身。VCL（T2）で何度も予選落ち。チームメイトのCrwsがわざわざ実家まで来て両親を説得してプロ生活をスタート。<strong>サインから2日後の初プロ舞台でMVP獲得</strong>、そのままTalon（後Paper Rex）をChampions 2024まで導いた。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#0369a1">1</div>
+        <div class="rbody">
+          <div class="rtitle">Radiant維持のためのランク毎日プレイ</div>
+          <div class="rdesc">primmieはプロになる前、タイのラジアントを何度も獲得していた。「ランクを毎日やる」こと自体が練習。エイムトレーナーより実戦量を優先するスタイル。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">ランク</span><span class="tag">実戦量</span></div>
+            <button class="addbtn" onclick="add(event,'pac_pri_1','ランク毎日プレイ（primmie式・実戦量優先）',60,'マクロ')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">毎日</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#0369a1">2</div>
+        <div class="rbody">
+          <div class="rtitle">デスマッチ — 「初見ピーク」訓練</div>
+          <div class="rdesc">primmieの強みは「初めて見た相手でも即反応する」こと。DM中に「一度も見たことがない角度」から来た相手への反応速度を特訓。慣れたコーナーを意図的に避ける。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">デスマッチ</span></div>
+            <button class="addbtn" onclick="add(event,'pac_pri_2','DM 初見ピーク反応訓練（primmie式）',15,'ピーク')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+      <div class="quote">
+        <p>"プロになれると思ってなかった。ただ毎日やった。それだけ。"</p>
+        <cite>— primmie（VCT Pacific「Homegrown」ドキュメンタリーより）</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- Jinggg -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#7c3aed">J</div>
+      <div class="pi">
+        <div class="pname">Jinggg</div>
+        <div class="pmeta">Paper Rex · シンガポール · Raze/Neon</div>
+        <div class="pbadges">
+          <span class="badge bg">2022・2023 APAC最優秀選手</span>
+          <span class="badge bs">PRX超攻撃スタイルの体現者</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      SEAのアンダードッグPaper Rexに2021年加入。翌2022年、Copenhagen Grand Finals（アジア初）まで導き<strong>APAC最優秀選手を2年連続受賞</strong>。「デスを恐れないピーク」というPRXの哲学を体現した選手。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#7c3aed">1</div>
+        <div class="rbody">
+          <div class="rtitle">デスマッチ — 全部先に出る縛り</div>
+          <div class="rdesc">PRXの練習哲学は「守るな、全部先に出る」。DM中にコーナーに入ったら必ず自分から出る。待つことをしない。これを毎日繰り返すことで「ピークの恐怖心」を消す。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">デスマッチ</span><span class="tag">PRXスタイル</span></div>
+            <button class="addbtn" onclick="add(event,'pac_jng_1','DM 先出し縛り（Jinggg/PRXスタイル）',15,'ピーク')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#7c3aed">2</div>
+        <div class="rbody">
+          <div class="rtitle">カスタム — 「アグレッシブ想定」のセットアップ練習</div>
+          <div class="rdesc">PRXは練習でもメタを無視したセットアップを試す。「普通じゃない動き」を試して失敗しても良い雰囲気で繰り返す。チームカスタムを毎日最低2時間。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">チームカスタム</span><span class="tag">戦術</span></div>
+            <button class="addbtn" onclick="add(event,'pac_jng_2','チームカスタム アグレッシブ戦術開発（PRX式）',120,'マクロ')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">2時間</div>
+      </div>
+      <div class="quote">
+        <p>"俺たちは負けても次のラウンドで同じことをやる。失敗を恐れてプレイを変えたら、俺たちじゃなくなる。"</p>
+        <cite>— Jinggg（配信より）</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- f0rsakeN -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#0f766e">f</div>
+      <div class="pi">
+        <div class="pname">f0rsakeN</div>
+        <div class="pmeta">Paper Rex · インドネシア · Jett/Gekko</div>
+        <div class="pbadges">
+          <span class="badge ba">Aimlabs公開ルーティン所有</span>
+          <span class="badge bg">CS:GO→Val転向で即世界級</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      CS:GOからValorantに転向し即PRXの中核に。<strong>Aimlabsと公式コラボしてルーティンを公開</strong>している数少ないプロの一人。HS%が異常に高く、精度特化の練習で知られる。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#0f766e">1</div>
+        <div class="rbody">
+          <div class="rtitle">Aimlabs — Gridshot Ultimate × 3本</div>
+          <div class="rdesc">f0rsakeNが公開しているルーティンの核心。スコアより「毎本同じ感覚か」を確認する。バラつきが大きい日は延長戦。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag aim">Aimlabs</span></div>
+            <button class="addbtn" onclick="add(event,'pac_f0r_1','Aimlabs Gridshot Ultimate × 3本（f0rsakeN式）',12,'エイム')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">12分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#0f766e">2</div>
+        <div class="rbody">
+          <div class="rtitle">Aimlabs — Spidershot & Microshot</div>
+          <div class="rdesc">f0rsakeNのHS%を支える精密性特訓。Spidershotで切り替え速度、Microshotで極小ターゲット精度を鍛える。この2つがHS%向上に直結すると本人が証言。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag aim">Aimlabs</span></div>
+            <button class="addbtn" onclick="add(event,'pac_f0r_2','Aimlabs Spidershot & Microshot（f0rsakeN式HS%向上）',10,'エイム')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">10分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#0f766e">3</div>
+        <div class="rbody">
+          <div class="rtitle">デスマッチ — クロスヘア置きのみ意識</div>
+          <div class="rdesc">エイムトレーナー後に必ず1本。最初の5分はキルを取ろうとせず「コーナーからの置き幅が正確か」だけを確認する移行練習。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">デスマッチ</span></div>
+            <button class="addbtn" onclick="add(event,'pac_f0r_3','DM クロスヘア置き確認移行練習（f0rsakeN式）',15,'エイム')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= AMERICAS ======= -->
+<div class="region-content" id="r-am">
+  <div class="rh am">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+    <div>
+      <div class="rh-title">Americas — ゼロからの成り上がり</div>
+      <div class="rh-sub">COVID中にゲームを始めた移民の子、T2から這い上がったMVP。誰でも上がれることを証明した選手たち。</div>
+    </div>
+  </div>
+
+  <!-- demon1 -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#dc2626">d</div>
+      <div class="pi">
+        <div class="pname">demon1</div>
+        <div class="pmeta">EG→NRG · ロシア系移民 · Jett/Neon</div>
+        <div class="pbadges">
+          <span class="badge bg">COVID中にゲーム開始→3年でVCTプロ</span>
+          <span class="badge bs">パスポート取得50時間不眠で東京へ</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      中学まで陸上選手。怪我でスポーツ断念後、COVID禁外出中にゲームを始める。わずか<strong>3年でVCT Americas入り</strong>。東京Masters前夜は50時間不眠でパスポートを取得して渡航。EGを奇跡のファイナリストに導いた。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#dc2626">1</div>
+        <div class="rbody">
+          <div class="rtitle">Aimlabs — Strafeshot（最重要）</div>
+          <div class="rdesc">demon1がAimlabsプレイリストで「最も重要」と断言するシナリオ。横移動しながら撃つターゲットへのトラッキング。Jettのダッシュ後の動的フリックに直結。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag aim">Aimlabs</span></div>
+            <button class="addbtn" onclick="add(event,'am_d1_1','Aimlabs Strafeshot（demon1最重要シナリオ）',10,'フリック')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">10分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#dc2626">2</div>
+        <div class="rbody">
+          <div class="rtitle">Aimlabs — Headshot（2番目に重要）</div>
+          <div class="rdesc">demon1のHS%を作るシナリオ。頭だけを狙う純粋な精度練習。StrafehotとHeadshotをセットで毎日やることがdemon1の基本。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag aim">Aimlabs</span></div>
+            <button class="addbtn" onclick="add(event,'am_d1_2','Aimlabs Headshot（demon1HS%向上）',10,'エイム')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">10分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#dc2626">3</div>
+        <div class="rbody">
+          <div class="rtitle">レンジ → デスマッチで感覚移行</div>
+          <div class="rdesc">Aimlabsで手を作った後、レンジで「ゲーム内感覚」に移行してからDMへ。エイムトレーナーとゲームの感覚ギャップを埋めるdemon1式の順序が重要。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag range">レンジ</span><span class="tag dm">デスマッチ</span></div>
+            <button class="addbtn" onclick="add(event,'am_d1_3','レンジ→DM 感覚移行ルーティン（demon1式）',15,'エイム')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+      <div class="quote">
+        <p>"ゲームを始めて3年でここにいる。練習量だけが俺の武器だった。エイムトレーナーを毎日やり続けた。"</p>
+        <cite>— demon1（esports.gg インタビューより）</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- zekken -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#7c3aed">z</div>
+      <div class="pi">
+        <div class="pname">zekken</div>
+        <div class="pmeta">Sentinels→MIBR · アメリカ · Jett/Tejo</div>
+        <div class="pbadges">
+          <span class="badge bg">T2 XSET → Masters Madrid MVP</span>
+          <span class="badge bs">Bo5最多キル101記録（当時）</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      T2のXSETでNerd Street Winter Champsを制覇。パートナー制で解散後、Sentinelsが獲得。<strong>Masters Madrid 2024でMVP、101キル（当時VCT最多記録）</strong>を達成。「謙虚なキング」と呼ばれるメンタルの安定感でSENを牽引。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#7c3aed">1</div>
+        <div class="rbody">
+          <div class="rtitle">T2時代から継続：ランク毎日高負荷プレイ</div>
+          <div class="rdesc">zekkenのT2からの成長の核心は「T1相手と同じ強度でランクを回し続けた」こと。1日最低5試合。質より量、慣れより強度。T2でも妥協しない姿勢がMVPを作った。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">ランク</span><span class="tag">高負荷</span></div>
+            <button class="addbtn" onclick="add(event,'am_zk_1','ランク高負荷毎日プレイ（zekken T2式）',120,'マクロ')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">毎日</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#7c3aed">2</div>
+        <div class="rbody">
+          <div class="rtitle">試合後メンタルリセット — 絶対に引きずらない</div>
+          <div class="rdesc">「謙虚なキング」と呼ばれるzekkenのメンタル管理。負け試合の後、10分以内に「次試合で変える1点」だけ決めて切り替える。試合を引きずったまま次に入らない。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag mental">メンタル</span></div>
+            <button class="addbtn" onclick="add(event,'am_zk_2','試合後メンタルリセット10分ルール（zekken式）',10,'メンタル')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">10分</div>
+      </div>
+      <div class="quote">
+        <p>"T2でも手を抜いたことは一度もない。誰も見ていなくても同じ強度でプレイした。それが今につながってる。"</p>
+        <cite>— zekken（配信より）</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- aspas -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#ea580c">a</div>
+      <div class="pi">
+        <div class="pname">aspas</div>
+        <div class="pmeta">MIBR · ブラジル · Jett/Iso</div>
+        <div class="pbadges">
+          <span class="badge bg">2025 Americas Player of Year</span>
+          <span class="badge ba">Kovaak's世界ランク1位</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      ブラジルのT2シーンからVALORANT参戦。<strong>Kovaak'sユーザー世界ランク1位</strong>（チームメイトwootが2位）。毎日欠かさず練習する一貫性で「世界最強デュエリスト」と呼ばれるまでに成長。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#ea580c">1</div>
+        <div class="rbody">
+          <div class="rtitle">Kovaak's — Shanks Warmup（絶対に毎日）</div>
+          <div class="rdesc">aspasとwootがKovaak's世界ランク1・2位を占めるシナリオセット。フリック・トラッキング・切り替えをバランスよく網羅。「サボった日は必ずパフォーマンスが落ちる」と本人が断言。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag aim">Kovaak's</span></div>
+            <button class="addbtn" onclick="add(event,'am_asp_1','Kovaak\'s Shanks Warmup 毎日必須（aspas式）',30,'エイム')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">30分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#ea580c">2</div>
+        <div class="rbody">
+          <div class="rtitle">デスマッチ — 「昨日と同じか？」確認</div>
+          <div class="rdesc">aspasの強みは毎試合同じパフォーマンスを出す一貫性。DM中に「今日のショットは昨日と同じ感覚か？」を自問しながら撃つ。スコアより感覚の一致を優先。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">デスマッチ</span><span class="tag mental">一貫性</span></div>
+            <button class="addbtn" onclick="add(event,'am_asp_2','DM 一貫性チェック「昨日と同じか」（aspas式）',20,'エイム')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">20分</div>
+      </div>
+      <div class="quote">
+        <p>"Kovaak'sをサボった日は必ずパフォーマンスが落ちる。世界一になっても毎日やる。"</p>
+        <cite>— aspas（配信より）</cite>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= EMEA ======= -->
+<div class="region-content" id="r-emea">
+  <div class="rh emea">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2a6 6 0 014.9 9.4L12 14l-2.4-2.6A6 6 0 019.5 2z"/><path d="M12 14v8"/><path d="M9 18h6"/></svg>
+    <div>
+      <div class="rh-title">EMEA — 論理的急成長</div>
+      <div class="rh-sub">AscensionからPlayer of Year、Bo5記録更新。スマートな成長の手本。</div>
+    </div>
+  </div>
+
+  <!-- kaajak -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#ff6900">K</div>
+      <div class="pi">
+        <div class="pname">kaajak</div>
+        <div class="pmeta">Fnatic · ポーランド · Neon/Jett</div>
+        <div class="pbadges">
+          <span class="badge bg">Ascension T2→2025 EMEA Player of Year</span>
+          <span class="badge bg">Most Improved + Rookie of Year 同年受賞</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      VCT EMEA Ascension（T2）2024でApeksを優勝に導き、Fnatic入り。1年で<strong>Player of Year・Most Improved・Rookie of Yearを同時受賞</strong>。1.27レーティング・240.8 ACS・35.7%クラッチ率。Derkeの後継として完全に定着。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#ff6900">1</div>
+        <div class="rbody">
+          <div class="rtitle">Kovaak's — Luc's Final Val Swings</div>
+          <div class="rdesc">Fnatic内で共有されているValorant特化シナリオ。ピーク後のフリックを想定した動的ターゲット設計。kaajak急成長の練習の核とされる。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag aim">Kovaak's</span></div>
+            <button class="addbtn" onclick="add(event,'emea_ka_1','Kovaak\'s Luc\'s Final Val Swings（kaajak/Fnatic式）',15,'フリック')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#ff6900">2</div>
+        <div class="rbody">
+          <div class="rtitle">ラウンド間メンタルリセット</div>
+          <div class="rdesc">kaajak急成長の秘密の一つ。負けラウンド後に「深呼吸→次ラウンドのプランを1つだけ決める」を必ずやる。感情でプレイを変えない。クラッチ率35.7%はこのメンタル管理から来ている。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag mental">メンタル</span></div>
+            <button class="addbtn" onclick="add(event,'emea_ka_2','ラウンド間メンタルリセット（kaajak式）',0,'メンタル')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">—</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#ff6900">3</div>
+        <div class="rbody">
+          <div class="rtitle">Neonのスプリント後停止射撃の反復</div>
+          <div class="rdesc">kaajak最大の武器。Neonのスプリント→即停止→撃つの0.1秒の感覚をカスタムで何百回も繰り返す。「動きながら当てる」ではなく「動いた直後を当てる」。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">カスタム</span><span class="tag">Neon</span></div>
+            <button class="addbtn" onclick="add(event,'emea_ka_3','Neon スプリント→停止射撃反復（kaajak式）',15,'ムーブメント')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- marteen -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#059669">m</div>
+      <div class="pi">
+        <div class="pname">marteen</div>
+        <div class="pmeta">Gentle Mates · チェコ · Yoru</div>
+        <div class="pbadges">
+          <span class="badge bg">2026 Kickoff Bo5最多126キル記録</span>
+          <span class="badge bs">無名→VCT世界を震撼</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      無名のGM選手が2026 Kickoffで突然爆発。Fnatic相手のBo5で<strong>VCT史上最多126キル</strong>を記録。Yoruというニッチエージェントを世界最高レベルで運用する独自路線で一気に世界の注目を集めた。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#059669">1</div>
+        <div class="rbody">
+          <div class="rtitle">Yoru — デコイ→テレポート反復カスタム</div>
+          <div class="rdesc">marteenのYoru運用は「デコイで相手の注意を引く→テレポートで想定外の位置から出る」の完璧なタイミングが命。カスタムで同じ動きを100回以上繰り返して体に染み込ませる。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">カスタム</span><span class="tag">Yoru</span></div>
+            <button class="addbtn" onclick="add(event,'emea_mt_1','Yoru デコイ→テレポート反復カスタム（marteen式）',15,'立ち回り')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#059669">2</div>
+        <div class="rbody">
+          <div class="rtitle">デスマッチ — 全弾フリック縛り</div>
+          <div class="rdesc">置き幅なし、全部フリックで仕留める縛りDM。Bo5で126キルという異常なパフォーマンスを支えるフリック精度の基礎訓練。KDは最悪でもいい。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">デスマッチ</span><span class="tag aim">フリック縛り</span></div>
+            <button class="addbtn" onclick="add(event,'emea_mt_2','DM 全フリック縛り（marteen式）',15,'フリック')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Derke -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#374151">D</div>
+      <div class="pi">
+        <div class="pname">Derke</div>
+        <div class="pmeta">Fnatic · フィンランド · Neon/Jett</div>
+        <div class="pbadges">
+          <span class="badge ba">Fnatic Kovaak's筆頭</span>
+          <span class="badge bg">2021〜2024 EMEA最高峰メカニクス</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      フィンランドのCS:GO出身。Valorant移行後、<strong>Fnacticの顔としてEMEAを3年以上席巻</strong>。Kovaak'sのLuc's Final Val Swingsを広めた張本人でもあり、機械的な精度とアグレッシブなピークを両立させた。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#374151">1</div>
+        <div class="rbody">
+          <div class="rtitle">Kovaak's — Luc's Final Val Swings（毎日）</div>
+          <div class="rdesc">Derkeがチーム内で広めたシナリオ。Valorant実距離のスウィング後フリックを設計。「これをやらない日は試合に入れない」と言うほど重要視。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag aim">Kovaak's</span></div>
+            <button class="addbtn" onclick="add(event,'emea_dk_1','Kovaak\'s Luc\'s Final Val Swings（Derke毎日）',15,'フリック')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#374151">2</div>
+        <div class="rbody">
+          <div class="rtitle">デスマッチ — アグレッシブピーク特化</div>
+          <div class="rdesc">守るより先に出る。Neonの機動力を活かした「大きく出てフリック」を繰り返す。コーナーから大きく出て当てる → 次のコーナーへ、のサイクル。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">デスマッチ</span><span class="tag">広角ピーク</span></div>
+            <button class="addbtn" onclick="add(event,'emea_dk_2','DM アグレッシブ広角ピーク（Derke式）',20,'ピーク')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">20分</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= CHINA ======= -->
+<div class="region-content" id="r-cn">
+  <div class="rh cn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+    <div>
+      <div class="rh-title">China — 反応速度の極致</div>
+      <div class="rh-sub">中国シーンから突如世界を驚かせた超攻撃的メカニクス。</div>
+    </div>
+  </div>
+
+  <!-- ZmjjKK -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#b45309">Z</div>
+      <div class="pi">
+        <div class="pname">ZmjjKK</div>
+        <div class="pmeta">Edward Gaming · 中国 · Jett/Chamber</div>
+        <div class="pbadges">
+          <span class="badge bg">2026 Stage1 最高評価選手の1人</span>
+          <span class="badge ba">OPマジシャン・世界最速反応</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      中国の国内シーンから台頭。OPのフリック精度と反応速度が異常と話題になり世界に認知される。<strong>ZOWIEの公式アンバサダーに抜擢</strong>され、中国Valorantの顔的存在に。レンジが唯一のウォームアップ起点という徹底ぶり。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#b45309">1</div>
+        <div class="rbody">
+          <div class="rtitle">レンジ — OPでドローン全撃墜</div>
+          <div class="rdesc">ZmjjKKはレンジのドローンをOPで全部落とすことからウォームアップを始める。「今日ドローンに当たらない日はランクに入らない」と決めている自分へのコンディションチェック。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag range">レンジ</span><span class="tag">OP</span></div>
+            <button class="addbtn" onclick="add(event,'cn_zk_1','レンジ OPドローン全撃墜コンディション確認（ZmjjKK式）',10,'エイム')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">10分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#b45309">2</div>
+        <div class="rbody">
+          <div class="rtitle">Aimlabs — マイクロフリック視野移動</div>
+          <div class="rdesc">ZmjjKKの異常な反応速度の秘密は「視野の移動速度」。画面端から端への素早い視点移動と同時に極小ターゲットを当てる練習。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag aim">Aimlabs</span></div>
+            <button class="addbtn" onclick="add(event,'cn_zk_2','Aimlabs マイクロフリック視野移動（ZmjjKK式）',15,'フリック')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#b45309">3</div>
+        <div class="rbody">
+          <div class="rtitle">デスマッチ — OPのみ縛り</div>
+          <div class="rdesc">フルDMをOPだけで戦い抜く中国式荒行。ライフルで負けてもいいがOPのショットは全部通す。OPフリックの精度と「外れても動じない」胆力を同時に鍛える。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">デスマッチ</span><span class="tag">OP縛り</span></div>
+            <button class="addbtn" onclick="add(event,'cn_zk_3','DM OP縛り荒行（ZmjjKK式）',15,'フリック')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+      <div class="quote">
+        <p>"レンジでドローンに当たらない日はランクに入らない。コンディションは正直に出る。"</p>
+        <cite>— ZmjjKK（ZOWIE公式インタビューより）</cite>
+      </div>
+    </div>
+  </div>
+
+  <!-- whzy -->
+  <div class="pc" onclick="tog(this)">
+    <div class="ph">
+      <div class="pa" style="background:#7c3aed">w</div>
+      <div class="pi">
+        <div class="pname">whzy</div>
+        <div class="pmeta">Bilibili Gaming · 中国 · Jett/Iso</div>
+        <div class="pbadges">
+          <span class="badge bg">2025 China Duelist of Year</span>
+          <span class="badge ba">233.5 ACS 安定出力</span>
+        </div>
+      </div>
+      <div class="pchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <div class="story-bar">
+      Bilibili GamingのエースとしてChina VCTを席巻。<strong>2025 China Duelist of Yearを受賞</strong>し、233.5 ACSを安定して出し続けるコンシステンシーで評価される。aspasスタイルの「毎日同じパフォーマンス」を中国で体現。
+    </div>
+    <div class="pbody">
+      <div class="rr">
+        <div class="rnum" style="background:#7c3aed">1</div>
+        <div class="rbody">
+          <div class="rtitle">Kovaak's — 高速フリックシナリオ</div>
+          <div class="rdesc">whzyは「先に出て先に倒す」スタイル。Kovaak'sで反応速度を最大化してからランクへ。高速フリック系のシナリオを中心に、毎日同じ内容をこなす一貫性重視。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag aim">Kovaak's</span></div>
+            <button class="addbtn" onclick="add(event,'cn_wh_1','Kovaak\'s 高速フリックシナリオ（whzy式）',20,'フリック')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">20分</div>
+      </div>
+      <div class="rr">
+        <div class="rnum" style="background:#7c3aed">2</div>
+        <div class="rbody">
+          <div class="rtitle">デスマッチ — 「遅い」と感じたら即リセット縛り</div>
+          <div class="rdesc">相手を見てから反応が遅いと感じた瞬間に逃げる（リセット）縛り。「遅い」を許容しない意識を強制的に作る。反応速度を追求する中国式DM。</div>
+          <div class="rfoot">
+            <div class="rtags"><span class="tag dm">デスマッチ</span></div>
+            <button class="addbtn" onclick="add(event,'cn_wh_2','DM 遅い即リセット縛り（whzy式反応速度練習）',15,'フリック')">＋ 追加</button>
+          </div>
+        </div>
+        <div class="rtime">15分</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><span class="nav-label">ホーム</span></a>
+  <a class="nav-item active" href="knowledge.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="nav-label">知識</span></a>
+  <a class="nav-item" href="tracker.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="nav-label">トラッカー</span></a>
+  <a class="nav-item" href="routine.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><span class="nav-label">ルーティン</span></a>
+  <a class="nav-item" href="goal.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></div><span class="nav-label">目標</span></a>
+</nav>
+
+<script>
+function sw(r, btn) {
+  document.querySelectorAll('.region-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.region-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('r-' + r).classList.add('active');
+}
+
+function tog(card) {
+  card.closest('.region-content').querySelectorAll('.pc.open').forEach(c => {
+    if (c !== card) c.classList.remove('open');
+  });
+  card.classList.toggle('open');
+  if (card.classList.contains('open')) {
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+  }
+}
+
+const added = new Set(JSON.parse(localStorage.getItem('actmate_pro_added') || '[]'));
+
+function add(e, id, title, time, tag) {
+  e.stopPropagation();
+  const btn = e.target;
+  if (added.has(id)) { toast('すでに追加済みです'); return; }
+  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; })();
+  try {
+    const tasks = JSON.parse(localStorage.getItem('actmate_tasks_' + today) || '[]');
+    tasks.push({ id, title, time, tag, detail: 'プロ練習DBより', done: false });
+    localStorage.setItem('actmate_tasks_' + today, JSON.stringify(tasks));
+  } catch(e2) {}
+  added.add(id);
+  localStorage.setItem('actmate_pro_added', JSON.stringify([...added]));
+  btn.textContent = '✓ 追加済み';
+  btn.classList.add('added');
+  toast('今日のルーティンに追加しました ✓');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// 追加済みボタン復元
+document.querySelectorAll('.addbtn').forEach(btn => {
+  const m = btn.getAttribute('onclick').match(/'([^']+)'/);
+  if (m && added.has(m[1])) { btn.textContent = '✓ 追加済み'; btn.classList.add('added'); }
+});
+</script>
+</body>
+</html>

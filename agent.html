@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>エージェントツリー - ACTMATE</title>
+<style>
+  :root {
+    --red: #FF4655;
+    --red-light: #fff0f2;
+    --accent: #38bdf8;
+    --accent-bg: #f0f9ff;
+    --text: #111;
+    --muted: #777;
+    --border: #eee;
+    --card: #fff;
+    --card-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    --off-white: #f7f7f8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--off-white); color: var(--text);
+    max-width: 430px; margin: 0 auto; min-height: 100vh;
+  }
+
+  /* ヘッダー */
+  .header {
+    background: #0d0f10;
+    padding: 52px 20px 20px;
+    position: relative; overflow: hidden;
+  }
+  .header::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 80% 20%, rgba(56,189,248,0.12) 0%, transparent 60%);
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+  .breadcrumb-item { font-size: 12px; color: rgba(255,255,255,0.4); cursor: pointer; padding: 2px 0; }
+  .breadcrumb-item.active { color: white; font-weight: 700; }
+  .breadcrumb-sep { color: rgba(255,255,255,0.2); font-size: 12px; }
+  .header-title { font-size: 22px; font-weight: 900; color: white; margin-bottom: 3px; }
+  .header-sub { font-size: 12px; color: rgba(255,255,255,0.45); }
+
+  /* エージェント選択バー */
+  .agent-bar {
+    background: #0d0f10; border-bottom: 1px solid #1a1d20;
+    padding: 12px 16px; display: flex; gap: 8px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .agent-bar::-webkit-scrollbar { display: none; }
+  .agent-btn {
+    border: 1.5px solid #2a2d30; border-radius: 100px;
+    padding: 6px 14px; font-size: 12px; font-weight: 700;
+    color: rgba(255,255,255,0.4); background: none; cursor: pointer;
+    white-space: nowrap; font-family: inherit; transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .agent-btn.active { background: var(--accent); border-color: var(--accent); color: #0c1a24; }
+
+  /* コンテンツ */
+  .tree-container { padding: 14px 14px 110px; }
+
+  /* ノードカード（カテゴリ） */
+  .node-card {
+    background: var(--card); border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 16px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: var(--card-shadow); cursor: pointer;
+    transition: all 0.15s; position: relative;
+  }
+  .node-card:active { transform: scale(0.98); }
+  .node-card.has-children::after {
+    content: '›'; position: absolute; right: 16px;
+    font-size: 20px; color: var(--accent); font-weight: 300;
+  }
+  .node-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .node-icon svg { width: 22px; height: 22px; }
+  .node-content { flex: 1; min-width: 0; padding-right: 24px; }
+  .node-title { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+  .node-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  /* リーフカード（詳細） */
+  .leaf-card {
+    background: var(--card); border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 16px; margin-bottom: 10px;
+    box-shadow: var(--card-shadow);
+  }
+  .leaf-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+  .leaf-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .leaf-icon svg { width: 18px; height: 18px; }
+  .leaf-title { font-size: 14px; font-weight: 800; margin-bottom: 3px; }
+  .leaf-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 100px; background: var(--accent-bg); color: #0369a1;
+    border: 1px solid #bae6fd;
+  }
+  .leaf-body {
+    font-size: 12px; color: #333; line-height: 1.75;
+    margin-bottom: 12px;
+  }
+  .leaf-body strong { color: var(--text); }
+  .leaf-tip {
+    background: var(--accent-bg); border-radius: 10px;
+    padding: 10px 12px; font-size: 11px; color: #0369a1; line-height: 1.6;
+    margin-bottom: 12px; border-left: 3px solid var(--accent);
+  }
+  .btn-add {
+    width: 100%; padding: 12px; border: none; border-radius: 12px;
+    background: var(--red); color: white; font-size: 13px;
+    font-weight: 700; font-family: inherit; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-add:active { opacity: 0.85; }
+  .btn-add.added { background: #f0fdf4; color: #16a34a; border: 1.5px solid #86efac; }
+
+  /* カートバー */
+  .cart-bar {
+    position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%) translateY(100%);
+    width: calc(100% - 28px); max-width: 402px; z-index: 100;
+    background: var(--text); border-radius: 16px; padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .cart-bar.show { transform: translateX(-50%) translateY(0); }
+  .cart-info { display: flex; align-items: center; gap: 10px; }
+  .cart-info span { color: white; font-size: 13px; }
+  .cart-count { font-weight: 900; color: var(--accent) !important; }
+  .btn-view { background: var(--accent); color: #0c1a24; border: none; border-radius: 10px; padding: 8px 14px; font-size: 12px; font-weight: 800; font-family: inherit; cursor: pointer; white-space: nowrap; }
+
+  /* ボトムナビ */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px; background: white;
+    border-top: 1.5px solid var(--border); display: flex;
+    padding: 8px 0 22px; z-index: 100;
+  }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; padding: 4px 0; }
+  .nav-icon svg { width: 22px; height: 22px; color: var(--muted); }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .nav-item.active .nav-label { color: var(--red); }
+  .nav-item.active .nav-icon svg { color: var(--red); }
+
+  /* モーダル */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: flex-end; }
+  .modal-sheet { background: white; border-radius: 24px 24px 0 0; padding: 20px 20px 40px; width: 100%; max-width: 430px; margin: 0 auto; max-height: 80vh; overflow-y: auto; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 100px; margin: 0 auto 18px; }
+  .modal-title { font-size: 17px; font-weight: 900; margin-bottom: 16px; }
+  .modal-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+  .modal-item:last-child { border-bottom: none; }
+  .modal-item-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .modal-item-icon svg { width: 18px; height: 18px; color: #0369a1; }
+  .modal-item-body { flex: 1; }
+  .modal-item-title { font-size: 13px; font-weight: 700; }
+  .modal-item-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .modal-item-del { background: none; border: none; color: #ccc; font-size: 18px; cursor: pointer; padding: 4px; }
+  .modal-total { font-size: 12px; color: var(--muted); padding: 12px 0; }
+  .modal-save { width: 100%; margin-top: 12px; background: var(--red); color: white; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 800; font-family: inherit; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="breadcrumb" id="breadcrumb">
+    <span class="breadcrumb-item active">エージェントツリー</span>
+  </div>
+  <div class="header-title" id="header-title">エージェントツリー</div>
+  <div class="header-sub" id="header-sub">エージェントの理論を深掘りしてルーティンに追加</div>
+</div>
+
+<div class="agent-bar">
+  <button class="agent-btn active" onclick="selectAgent('jett', this)">Jett</button>
+  <button class="agent-btn" onclick="selectAgent('neon', this)">Neon</button>
+  <button class="agent-btn" onclick="selectAgent('reyna', this)">Reyna</button>
+  <button class="agent-btn" onclick="selectAgent('coming', this)">Raze</button>
+  <button class="agent-btn" onclick="selectAgent('coming', this)">Iso</button>
+  <button class="agent-btn" onclick="selectAgent('coming', this)">Sage</button>
+</div>
+
+<div class="tree-container" id="tree-container"></div>
+
+<!-- カートバー -->
+<div class="cart-bar" id="cart-bar">
+  <div class="cart-info">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    <span><span class="cart-count" id="cart-count">0</span> 項目</span>
+    <span id="cart-time" style="font-size:11px;color:rgba(255,255,255,0.5)"></span>
+  </div>
+  <button class="btn-view" onclick="openModal()">ルーティンを作る →</button>
+</div>
+
+<!-- モーダル -->
+<div class="modal-overlay" id="routine-modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📋 あなたのルーティン</div>
+    <div id="routine-list"></div>
+    <div class="modal-total" id="routine-total"></div>
+    <button class="modal-save" onclick="saveRoutine()">このルーティンで練習を始める →</button>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><span class="nav-label">ホーム</span></a>
+  <a class="nav-item active" href="knowledge.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="nav-label">知識</span></a>
+  <a class="nav-item" href="tracker.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="nav-label">トラッカー</span></a>
+  <a class="nav-item" href="routine.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><span class="nav-label">ルーティン</span></a>
+  <a class="nav-item" href="goal.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></div><span class="nav-label">目標</span></a>
+</nav>
+
+<script>
+// ===== データ =====
+const AGENTS = {
+  jett: {
+    name: 'Jett',
+    desc: 'デュエリスト · 風を操る韓国人',
+    color: '#38bdf8',
+    colorBg: '#f0f9ff',
+    categories: [
+      {
+        id: 'jett-ability',
+        title: 'アビリティ理論',
+        desc: '4つのスキルの正しい理解と使い分け',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>`,
+        children: [
+          {
+            id: 'jett-dash',
+            title: 'ダッシュ（E）の本質',
+            tag: 'スキル理論',
+            body: `Jettのダッシュは「逃げるスキル」ではなく<strong>「有利な角度を瞬時に作るスキル」</strong>として使う。\n\n▍正しい使い方の3原則\n① ピーク前ではなくピーク中またはピーク後に使う\n② 「撃った直後に離脱」のコンボを体に染み込ませる\n③ ダッシュの向きはマウスの向きで決まる。練習なしでは精度が出ない\n\n▍TenZ / cNedが実践するダッシュの意識\n「ダッシュはOP1発を保証する保険」として運用。出て撃つ→外したらダッシュで離脱→次の角度から再ピーク。これを一つの動作として練習する。\n\n▍最も多いミス\nダッシュを「逃げ」に使うのは最悪。スキルを温存して死ぬくらいなら、積極的に使って生存率を上げる方が強い。`,
+            tip: 'レンジでボットに対してダッシュ→1タップ→即ダッシュ離脱を100回繰り返す。この動作がゲームで無意識にできれば一段階上のJettになれる。',
+            addLabel: 'ダッシュ理論をルーティンに追加',
+            addItem: { time: 10, tag: 'Jett理論' }
+          },
+          {
+            id: 'jett-updraft',
+            title: 'アップドラフト（Q）の活用',
+            tag: 'スキル理論',
+            body: `アップドラフトは単なる上昇スキルではなく、<strong>「相手が絶対に置いていない角度を作るスキル」</strong>。\n\n▍高所奇襲の公式\n① アップドラフトで屋根や箱の上に乗る\n② 相手がクロスヘアを下に置いている隙に撃つ\n③ 撃った直後にダッシュで離脱（Qトークン回収のため）\n\n▍マップ別の鉄板スポット\n・Bind：A Shortの箱の上\n・Haven：ガレージ上からのAピーク\n・Fracture：A Dropのルーフトップ\n・Ascent：Aメインのライトへの奇襲\n\n▍注意点\n空中で撃つと精度が大幅に落ちる。「着地した瞬間」に撃つか、着地前から当たりにいく練習が必要。アップドラフト後に止まってから撃つ意識を持つ。`,
+            tip: 'カスタムで各マップのアップドラフトスポット3箇所を決めて、そこから撃つ練習を毎日やる。「このマップはここから出る」を完全に覚えると読まれにくくなる。',
+            addLabel: 'アップドラフト運用をルーティンに追加',
+            addItem: { time: 10, tag: 'Jett理論' }
+          },
+          {
+            id: 'jett-cloud',
+            title: 'クラウドバースト（C）の正しい使い方',
+            tag: 'スキル理論',
+            body: `クラウドバーストは「自分が前に出る隙を作るスモーク」。チームのコントローラーが使うスモークとは目的が違う。\n\n▍目的別の使い方\n① ピーク時の目隠し：自分の移動ルートに投げて相手の視線を切る\n② 被弾後の緊急離脱：撃たれた瞬間に足元に投げて煙に逃げ込む\n③ トークン回収のダミー：Eのダッシュトークンを温存するための囮\n\n▍クラウドバーストの軌道制御\n投げた後にC長押しで軌道を曲げられる。この仕様を知らないJettが意外と多い。コーナーの裏に曲げて投げることで、より有効な視線切りができる。\n\n▍yay流の使い方\nyayはクラウドバーストをほとんど「撃った後の逃げ」に使う。OP撃撃→煙に逃げるまでが一つのコンボ。`,
+            tip: 'C長押しで軌道を曲げる練習をレンジでやる。「足元に曲げて投げる」ができると被弾後の生存率が一気に上がる。',
+            addLabel: 'クラウドバースト運用をルーティンに追加',
+            addItem: { time: 8, tag: 'Jett理論' }
+          },
+          {
+            id: 'jett-bladestorm',
+            title: 'ブレードストーム（X）の最強運用',
+            tag: 'スキル理論',
+            body: `ブレードストームは「OP代わりの1確兵器」として使うのが最強。\n\n▍必ず覚える使い方\n① 左クリック（単発）：頭に当てると1発即死。OPより安く・速い\n② 右クリック（全投げ）：複数の敵が密集しているときだけ使う\n③ キルすると刃が戻ってくる：積極的に使い続けられる\n\n▍TenZのブレードストーム哲学\n「Xを温存しているやつは下手くそ」。ラウンド開始直後のピストルラウンドにXを使っても良い。キルさえすれば刃が戻る。\n\n▍エコラウンドでの破壊的な運用\nエコラウンドでXを持っていると実質「OPを持っている」のと同じ。1確の脅威として相手の動きを制限できる。ピストル+ブレードストームは最強のエコ武装の一つ。`,
+            tip: '練習エリアでブレードストームの頭への当たりを確認する。意外と「頭に当てる感覚」は練習が必要。10mと20mと30mの距離で各10回当てる練習を毎日やる。',
+            addLabel: 'ブレードストーム運用をルーティンに追加',
+            addItem: { time: 8, tag: 'Jett理論' }
+          },
+        ]
+      },
+      {
+        id: 'jett-op',
+        title: 'OP（オペレーター）理論',
+        desc: 'JettのOP運用で世界トップになるための考え方',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>`,
+        children: [
+          {
+            id: 'jett-op-peek',
+            title: 'OPピークの基本：スウィングピークとホールド',
+            tag: 'OP理論',
+            body: `JettのOPは「出る」スタイルと「待つ」スタイルを状況で使い分ける。\n\n▍スウィングピーク（出る）\n・エネミーがいると分かっている場所に対して大きく出てOP\n・ダッシュとセットで使う（撃った後すぐ離脱）\n・cNed / ZmjjKKのスタイル\n\n▍ホールドOP（待つ）\n・相手が来るまでアングルを保持して待つ\n・「相手が動いた瞬間」に撃つ。こちらが先に動かない\n・yayのスタイル\n\n▍どちらを使うかの判断基準\n「情報がある（相手の場所を知っている）」→スウィング\n「情報がない（どこから来るか不明）」→ホールド\n\nプラチナ帯では情報なしでスウィングして負ける人が多い。まずホールドを安定させてからスウィングを覚える順番が正しい。`,
+            tip: '「今のピークは情報があったか？」を1試合通して自問する。情報なしのスウィングが多い日は次の試合でホールドを意識する。',
+            addLabel: 'OPピーク理論をルーティンに追加',
+            addItem: { time: 15, tag: 'OP理論' }
+          },
+          {
+            id: 'jett-op-retake',
+            title: 'OP後のリトリート（最重要）',
+            tag: 'OP理論',
+            body: `OPで撃った後の動きが「生きるか死ぬか」を決める。\n\n▍OPを持ったJettが必ずやること\n撃った → 即ダッシュで位置変え → 新しいアングルでもう一度ホールド\n\nこれを「リトリートパターン」と呼ぶ。撃ち終わった後に同じ位置に居続けると、相手が場所を割り出して反撃してくる。\n\n▍ダッシュルートを事前に決める\nOPを持ってピークする前に「外したらどこに逃げるか」を決めておく。瞬時に判断する必要はない。移動先を事前に決めることで頭が空っぽのまま動ける。\n\n▍よくある最悪パターン\n撃った → 外した → 同じ場所に居続けてリーク弾で死ぬ\nこれを繰り返しているうちは「OP持ちJett」の強みを全く活かせていない。`,
+            tip: 'カスタムかデスマッチでOPを持ち、「撃ったら必ずダッシュ」を体に染み込ませる。撃つと同時にダッシュキーを押す練習を100回やる。',
+            addLabel: 'OPリトリートをルーティンに追加',
+            addItem: { time: 12, tag: 'OP理論' }
+          },
+          {
+            id: 'jett-op-eco',
+            title: 'OPエコの考え方',
+            tag: 'OP理論',
+            body: `OPは高額（4700）だが、Jettにとっては「買える試合では必ず買う」が原則。\n\n▍Jettのエコ方針\n・フルバイ：OP確定。他のスキルを削ってでもOPを買う\n・ハーフバイ：OP+ライト。スキルは諦める\n・エコ：ブレードストーム（X）があれば「擬似OP」として運用\n・フォース：チーム状況次第。自分だけOPにすると孤立しやすい\n\n▍OPを持てないラウンドの立ち回り\nJettがOP以外の武器を持つ場合、役割が変わる。Jettのダッシュはライフル戦でも強力なので、ライフルでエントリーをこなす役割に切り替える。\n\n▍OP温存のリスク\nエコラウンドで「次のために温存」してOPを持たないより、アグレッシブに使って1〜2キルしてOP回収する方がラウンド勝率が上がる。`,
+            tip: '1試合が終わった後に「何ラウンドOPを持てたか」を数える習慣をつける。10ラウンド以上OPを持てていないなら経済管理を見直す。',
+            addLabel: 'OPエコ理論をルーティンに追加',
+            addItem: { time: 8, tag: 'OP理論' }
+          },
+        ]
+      },
+      {
+        id: 'jett-movement',
+        title: 'Jett特有のムーブメント',
+        desc: 'ダッシュを絡めた動きの作り方',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="M9 12l-3 8"/><path d="M15 12l3 8"/><path d="M9 12c0-2 1.5-4 3-4s3 2 3 4l2 4H7l2-4z"/></svg>`,
+        children: [
+          {
+            id: 'jett-mov-dash',
+            title: 'ダッシュ後の着地エイム',
+            tag: 'ムーブメント',
+            body: `ダッシュ直後は「着地した瞬間」に体が止まる。この一瞬が最大の攻撃チャンス。\n\n▍ダッシュ後の動作順序\n① Eでダッシュ（エリアを超える）\n② 着地 → 体が完全に止まる（カウンターストレイフ不要）\n③ その静止した瞬間に1発撃つ\n④ すぐに次の動作へ\n\n▍なぜプラチナ帯でこれができないか\nダッシュ後に「着地した」という感覚を持てていない。慌てて撃ったり、ダッシュしながら撃ったりして精度が出ない。\n\n▍練習方法\nレンジでダッシュ → 着地直後に1タップ を50回。着地のタイミングでサウンドが変わるので、それを聴きながら撃つ感覚を作る。`,
+            tip: 'デスマッチでコーナーを曲がるたびにEを使う練習をする。最初はEが余ってもいい。ダッシュ → 止まる → 撃つの順序を体に染み込ませることが先。',
+            addLabel: 'ダッシュ着地エイムをルーティンに追加',
+            addItem: { time: 10, tag: 'Jettムーブ' }
+          },
+          {
+            id: 'jett-mov-jiggle',
+            title: 'Jettのジグルピーク応用',
+            tag: 'ムーブメント',
+            body: `Jettのジグルピークは普通のエージェントのそれより強い理由がある。\n\n▍Jettのジグルが強い理由\nダッシュがある = ジグルをした直後に「見えない位置まで一瞬で消える」ことができる。相手からすると「見えた→消えた→どこ？」となる。\n\n▍Jett限定のジグルコンボ\n① コーナーからほんの少しだけ出る（情報収集）\n② 相手が撃ってくる → ダッシュで完全に消える\n③ 相手がリロードした瞬間にフルピーク\n\n▍注意点\nダッシュのトークンが0のときはこのコンボを使えない。スキルの残量を常に確認する。`,
+            tip: '「ジグル→ダッシュ消え→フルピーク」を3セットのコンボとして練習する。コーナーを決めてこの動作を反復。最初はゆっくりでいい。',
+            addLabel: 'Jettジグルコンボをルーティンに追加',
+            addItem: { time: 10, tag: 'Jettムーブ' }
+          },
+          {
+            id: 'jett-mov-highground',
+            title: '高所活用とアップドラフトルート',
+            tag: 'ムーブメント',
+            body: `Jettはアップドラフトで他のエージェントが行けない場所に行ける。これを「通常ルートとして習慣化」することが上達への近道。\n\n▍マップ別の鉄板アップドラフト活用ルート\n\n【Ascent】\n・Aサイト：Aメインの箱の上 → OPホールド\n・Bサイト：Bガーデンの壁上\n\n【Haven】\n・Aサイト：ガレージからのルーフ\n・Cサイト：Cロングの高台\n\n【Bind】\n・Aショート：箱の上からのOP角度\n・Bサイト：Bシャワーの上\n\n▍習慣化のコツ\n「このマップのAサイトはここに乗る」と決めてしまう。毎試合同じことをやり続けることで、読まれる前に次の位置に移動できるようになる。`,
+            tip: '1週間、特定のマップでアップドラフト高所ポジを毎ラウンド試し続ける。読まれて死んでも続ける。習慣化すると徐々に精度が上がる。',
+            addLabel: '高所活用ルートをルーティンに追加',
+            addItem: { time: 12, tag: 'Jettムーブ' }
+          },
+        ]
+      },
+      {
+        id: 'jett-mindset',
+        title: 'Jettのメンタル・役割理解',
+        desc: 'デュエリストとしての思考法',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2a6 6 0 014.9 9.4L12 14l-2.4-2.6A6 6 0 019.5 2z"/><path d="M12 14v8"/><path d="M9 18h6"/></svg>`,
+        children: [
+          {
+            id: 'jett-role',
+            title: 'Jettの役割：エントリーフラガーとは何か',
+            tag: 'メンタル',
+            body: `Jettはエントリーフラガー。チームで「最初に入る人」。これが分かっていない人は「KDを守るために後ろから撃つ」という誤ったプレイをしてしまう。\n\n▍エントリーフラガーの3つの義務\n① 先にサイトに入って情報を取る\n② 死んでも良い（死亡 = 情報 + スペース提供）\n③ 取ったスペースをチームに渡す\n\n▍「死を恐れないJett」の考え方\nyayやTenZはJettで「死んでいい場面」と「死んではいけない場面」を明確に分けている。エントリーで死ぬのは仕事。でもエコラウンドやポスト植付けで死ぬのは損失。\n\n▍プラチナ帯でよくある誤解\nKDが低いと「Jett下手」と思われるが、エントリーが仕事のラウンドでKD2.0なのは逆に「仕事をしていない」場合がある。デスが多くてもチームが勝っているなら正しいプレイをしている。`,
+            tip: '1試合が終わったらKDではなく「自分がエントリーしたラウンドで何%サイトが取れたか」を振り返る。これがJettの本当のKPI。',
+            addLabel: 'Jett役割理解をルーティンに追加',
+            addItem: { time: 0, tag: 'Jettメンタル' }
+          },
+          {
+            id: 'jett-deathcount',
+            title: 'Jettが死んでいい場面・いけない場面',
+            tag: 'メンタル',
+            body: `「Jettは攻める」は本当だが、全部の場面で攻めていい訳じゃない。\n\n▍死んでいい場面\n・エントリー：チームのスペース提供が目的\n・フルバイラウンドの序盤：情報収集で死ぬのはOK\n・ウルト（X）を持っている：キルして回収できる\n\n▍死んではいけない場面\n・ピストルラウンド：Jettの死は経済的ダメージが大きい\n・エコラウンド：チームの武器回収の可能性がゼロになる\n・ポスト植付け後：残るべき人数が足りなくなる\n・1v1や1v2のクラッチ場面：情報収集後に落ち着いてプレイ\n\n▍一言でまとめると\n「チームが得をする死は仕事。自分しか損しない死は下手」`,
+            tip: 'デスマッチではなくランクで「今のデスはOKか？」を死ぬたびに自問する。「これはチームのためのデスだった」と答えられれば正しいプレイ。',
+            addLabel: 'Jettデス判断基準をルーティンに追加',
+            addItem: { time: 0, tag: 'Jettメンタル' }
+          },
+        ]
+      },
+    ]
+  },
+  neon: {
+    name: 'Neon',
+    desc: 'デュエリスト · 電光石火のフィリピン人',
+    color: '#facc15',
+    colorBg: '#fefce8',
+    categories: [
+      {
+        id: 'neon-coming',
+        title: '（準備中）',
+        desc: 'Neonの理論は近日追加予定',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+        children: []
+      }
+    ]
+  },
+  reyna: {
+    name: 'Reyna',
+    desc: 'デュエリスト · 吸血鬼のメキシカン',
+    color: '#a855f7',
+    colorBg: '#faf5ff',
+    categories: [
+      {
+        id: 'reyna-coming',
+        title: '（準備中）',
+        desc: 'Reynaの理論は近日追加予定',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+        children: []
+      }
+    ]
+  },
+  coming: {
+    name: '準備中',
+    desc: '近日追加予定',
+    color: '#888',
+    colorBg: '#f5f5f5',
+    categories: [
+      {
+        id: 'coming-soon',
+        title: '（準備中）',
+        desc: '近日追加予定です',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+        children: []
+      }
+    ]
+  }
+};
+
+// ===== 状態 =====
+let currentAgent = 'jett';
+let currentPath = [];
+let cart = [];
+let addedIds = new Set();
+
+function selectAgent(agentId, btn) {
+  document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentAgent = agentId;
+  currentPath = [];
+  render();
+}
+
+function getNode(path) {
+  const agent = AGENTS[currentAgent];
+  if (!path.length) return null;
+  let node = agent.categories.find(c => c.id === path[0]);
+  for (let i = 1; i < path.length; i++) {
+    node = node?.children?.find(c => c.id === path[i]);
+  }
+  return node;
+}
+
+function navigate(id) { currentPath.push(id); render(); }
+function navTo(idx)   { currentPath = currentPath.slice(0, idx); render(); }
+
+function render() {
+  const agent = AGENTS[currentAgent];
+  if (!agent) return;
+
+  // ヘッダー更新
+  const crumbs = [{ label: agent.name, idx: 0 }];
+  let cur = null;
+  for (let i = 0; i < currentPath.length; i++) {
+    const cats = i === 0 ? agent.categories : cur?.children || [];
+    cur = cats.find(c => c.id === currentPath[i]);
+    if (cur) crumbs.push({ label: cur.title, idx: i + 1 });
+  }
+
+  document.getElementById('breadcrumb').innerHTML = crumbs.map((c, i) =>
+    `<span class="breadcrumb-item ${i===crumbs.length-1?'active':''}" onclick="navTo(${c.idx})">${c.label}</span>` +
+    (i < crumbs.length - 1 ? '<span class="breadcrumb-sep">›</span>' : '')
+  ).join('');
+
+  const ac = agent.color;
+  const acBg = agent.colorBg;
+
+  // コンテンツ描画
+  const container = document.getElementById('tree-container');
+  container.innerHTML = '';
+
+  const items = currentPath.length === 0 ? agent.categories
+    : getNode(currentPath)?.children || [];
+
+  items.forEach(item => {
+    const isLeaf = !item.children || item.children.length === 0;
+
+    if (isLeaf && item.body) {
+      // リーフカード
+      const div = document.createElement('div');
+      div.className = 'leaf-card';
+      const added = addedIds.has(item.id);
+      div.innerHTML = `
+        <div class="leaf-header">
+          <div class="leaf-icon" style="background:${acBg}">${item.icon || `<svg viewBox="0 0 24 24" fill="none" stroke="${ac}" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg>`}</div>
+          <div>
+            <div class="leaf-title">${item.title}</div>
+            <span class="leaf-tag" style="background:${acBg};color:${ac};border-color:${ac}33">${item.tag}</span>
+          </div>
+        </div>
+        <div class="leaf-body">${(item.body||'').replace(/\n/g,'<br>')}</div>
+        ${item.tip ? `<div class="leaf-tip">💡 ${item.tip}</div>` : ''}
+        <button class="btn-add ${added?'added':''}" onclick="addItem('${item.id}')">
+          ${added ? '✓ 追加済み' : (item.addLabel || 'ルーティンに追加')}
+        </button>
+      `;
+      container.appendChild(div);
+    } else {
+      // カテゴリカード
+      const div = document.createElement('div');
+      div.className = 'node-card' + (item.children?.length ? ' has-children' : '');
+      div.onclick = () => { if (item.children?.length) navigate(item.id); };
+      div.innerHTML = `
+        <div class="node-icon" style="background:${acBg};color:${ac}">${item.icon || ''}</div>
+        <div class="node-content">
+          <div class="node-title">${item.title}</div>
+          <div class="node-desc">${item.desc || ''}</div>
+        </div>
+      `;
+      container.appendChild(div);
+    }
+  });
+
+  updateCart();
+}
+
+function addItem(id) {
+  if (addedIds.has(id)) return;
+  const agent = AGENTS[currentAgent];
+
+  // ノードを探す
+  let found = null;
+  function find(nodes) {
+    for (const n of nodes) {
+      if (n.id === id) { found = n; return; }
+      if (n.children) find(n.children);
+    }
+  }
+  find(agent.categories);
+  if (!found) return;
+
+  addedIds.add(id);
+  cart.push({ ...found });
+  render();
+  renderModal();
+  updateCart();
+}
+
+function updateCart() {
+  const bar = document.getElementById('cart-bar');
+  const count = document.getElementById('cart-count');
+  const time = document.getElementById('cart-time');
+  if (cart.length === 0) {
+    bar.classList.remove('show');
+    return;
+  }
+  bar.classList.add('show');
+  count.textContent = cart.length;
+  const total = cart.reduce((s, c) => s + (c.addItem?.time || 0), 0);
+  time.textContent = total > 0 ? `約${total}分` : '';
+}
+
+function openModal() {
+  renderModal();
+  document.getElementById('routine-modal').style.display = 'flex';
+}
+
+function renderModal() {
+  const list = document.getElementById('routine-list');
+  const total = document.getElementById('routine-total');
+  list.innerHTML = cart.map(item => `
+    <div class="modal-item">
+      <div class="modal-item-icon">${item.icon || `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg>`}</div>
+      <div class="modal-item-body">
+        <div class="modal-item-title">${item.title}</div>
+        <div class="modal-item-meta">${item.tag}${item.addItem?.time ? ' · ' + item.addItem.time + '分' : ''}</div>
+      </div>
+      <button class="modal-item-del" onclick="removeItem('${item.id}')">✕</button>
+    </div>
+  `).join('');
+  const t = cart.reduce((s, c) => s + (c.addItem?.time || 0), 0);
+  total.textContent = `合計 約${t}分/日`;
+}
+
+function removeItem(id) {
+  cart = cart.filter(c => c.id !== id);
+  addedIds.delete(id);
+  render();
+  renderModal();
+  updateCart();
+}
+
+function saveRoutine() {
+  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; })();
+  const key = 'actmate_tasks_' + today;
+  try {
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    cart.forEach(item => {
+      existing.push({
+        id: item.id,
+        title: item.title,
+        time: item.addItem?.time || 0,
+        tag: item.tag || 'エージェント理論',
+        detail: '',
+        done: false
+      });
+    });
+    localStorage.setItem(key, JSON.stringify(existing));
+  } catch(e) {}
+  document.getElementById('routine-modal').style.display = 'none';
+  alert('ルーティンに追加しました！\nroutine.htmlで確認できます。');
+}
+
+// 初期化
+render();
+</script>
+</body>
+</html>

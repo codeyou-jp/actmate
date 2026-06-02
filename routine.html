@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ルーティン - ACTMATE</title>
+<style>
+  :root {
+    --red: #FF4655;
+    --red-light: #fff0f2;
+    --text: #111;
+    --muted: #888;
+    --border: #f0e0e2;
+    --card-shadow: 0 2px 16px rgba(255,70,85,0.08);
+    --off-white: #fafafa;
+    --green: #22c55e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--off-white); color: var(--text);
+    max-width: 430px; margin: 0 auto; min-height: 100vh;
+  }
+  .header {
+    background: var(--red); padding: 52px 24px 28px;
+    position: relative; overflow: hidden;
+  }
+  .header::after {
+    content: ''; position: absolute; bottom: -50px; right: -30px;
+    width: 130px; height: 130px; border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .header-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 6px; }
+  .header-title { font-size: 28px; font-weight: 900; color: white; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .header-title svg { width: 26px; height: 26px; }
+  .today-date { font-size: 12px; color: rgba(255,255,255,0.6); }
+
+  /* サマリーバー */
+  .summary-bar {
+    background: white; border-bottom: 1.5px solid var(--border);
+    padding: 14px 20px; display: flex; align-items: center; gap: 16px;
+  }
+  .summary-item { display: flex; flex-direction: column; align-items: center; }
+  .summary-num { font-size: 22px; font-weight: 900; color: var(--red); }
+  .summary-label { font-size: 10px; color: var(--muted); font-weight: 600; margin-top: 1px; }
+  .summary-sep { width: 1px; height: 30px; background: var(--border); }
+  .summary-progress { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .summary-prog-header { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .summary-prog-bar { height: 6px; background: var(--border); border-radius: 100px; overflow: hidden; }
+  .summary-prog-fill { height: 100%; background: var(--green); border-radius: 100px; transition: width 0.4s; }
+
+  /* コンテンツ */
+  .content { padding: 16px 16px 120px; }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; margin-top: 20px; }
+  .section-label-row { display: flex; align-items: center; gap: 6px; }
+  .section-label-row svg { width: 16px; height: 16px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .section-action { font-size: 12px; font-weight: 600; color: var(--red); cursor: pointer; border: none; background: none; font-family: inherit; }
+
+  /* タスクカード */
+  .task-card {
+    background: white; border: 1.5px solid var(--border); border-radius: 16px;
+    margin-bottom: 8px; display: flex; align-items: flex-start;
+    gap: 12px; padding: 14px 16px; box-shadow: var(--card-shadow);
+    transition: all 0.2s; cursor: pointer;
+  }
+  .task-card.done { opacity: 0.5; background: #f9f9f9; }
+  .task-card.done .task-title { text-decoration: line-through; }
+
+  .task-check {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid var(--border); display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; transition: all 0.2s; margin-top: 1px;
+  }
+  .task-check svg { width: 13px; height: 13px; color: white; opacity: 0; transition: opacity 0.2s; }
+  .task-card.done .task-check { background: var(--green); border-color: var(--green); }
+  .task-card.done .task-check svg { opacity: 1; }
+
+  .task-body { flex: 1; min-width: 0; }
+  .task-title { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+  .task-meta { display: flex; align-items: center; gap: 8px; }
+  .task-tag {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px;
+    background: var(--red-light); color: var(--red); border: 1px solid #ffd0d5;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .task-tag svg { width: 10px; height: 10px; }
+  .task-time { color: var(--muted); font-size: 11px; display: flex; align-items: center; gap: 3px; }
+  .task-time svg { width: 11px; height: 11px; }
+  .task-detail { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+  /* 追加ボタン */
+  .add-btn {
+    width: 100%; border: 1.5px dashed var(--border); border-radius: 16px;
+    padding: 14px; text-align: center; font-size: 13px; font-weight: 600;
+    color: var(--muted); background: none; font-family: inherit; cursor: pointer;
+    transition: all 0.15s; margin-bottom: 8px; display: flex;
+    align-items: center; justify-content: center; gap: 6px;
+  }
+  .add-btn svg { width: 16px; height: 16px; }
+  .add-btn:active { border-color: var(--red); color: var(--red); }
+
+  /* モーダル */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: flex-end; }
+  .modal-sheet { background: white; border-radius: 24px 24px 0 0; padding: 20px 20px 40px; width: 100%; max-width: 430px; margin: 0 auto; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 100px; margin: 0 auto 18px; }
+  .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .modal-title svg { width: 20px; height: 20px; color: var(--red); }
+  .field-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; margin-top: 14px; }
+  .field-input { width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 14px; font-family: inherit; outline: none; }
+  .field-input:focus { border-color: var(--red); }
+  .preset-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .preset-chip { font-size: 11px; padding: 5px 12px; border-radius: 100px; border: 1.5px solid var(--border); background: white; cursor: pointer; font-family: inherit; font-weight: 600; transition: all 0.15s; }
+  .preset-chip.sel { border-color: var(--red); background: var(--red-light); color: var(--red); }
+  .modal-save { width: 100%; margin-top: 20px; background: var(--red); color: white; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 800; font-family: inherit; cursor: pointer; }
+
+  /* 完了バー */
+  .complete-bar { position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 398px; z-index: 100; }
+  .complete-btn { width: 100%; background: var(--green); color: white; border: none; border-radius: 16px; padding: 16px; font-size: 15px; font-weight: 800; font-family: inherit; cursor: pointer; box-shadow: 0 4px 20px rgba(34,197,94,0.35); transition: opacity 0.15s; display: none; align-items: center; justify-content: center; gap: 8px; }
+  .complete-btn svg { width: 20px; height: 20px; }
+  .complete-btn.show { display: flex; }
+  .complete-btn:active { opacity: 0.85; }
+
+  /* 空状態 */
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-icon { width: 56px; height: 56px; margin: 0 auto 16px; color: #ddd; }
+  .empty-icon svg { width: 56px; height: 56px; }
+  .empty-state p { font-size: 14px; line-height: 1.7; }
+  .goto-goal { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; background: var(--red); color: white; text-decoration: none; border-radius: 14px; padding: 12px 24px; font-size: 14px; font-weight: 700; }
+  .goto-goal svg { width: 16px; height: 16px; }
+
+  /* フォーカスチップ */
+  .focus-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; padding-left: 4px; }
+  .focus-chip { font-size: 10px; padding: 3px 10px; border-radius: 100px; background: var(--red-light); color: var(--red); border: 1px solid #ffd0d5; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .focus-chip svg { width: 10px; height: 10px; }
+
+  /* ボトムナビ */
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1.5px solid var(--border); display: flex; padding: 8px 0 22px; z-index: 100; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; padding: 4px 0; }
+  .nav-item:active { opacity: 0.6; }
+  .nav-icon svg { width: 22px; height: 22px; color: var(--muted); }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .nav-item.active .nav-label { color: var(--red); }
+  .nav-item.active .nav-icon svg { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">ACTMATE</div>
+  <div class="header-title">
+    <!-- ダンベル -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="8" width="4" height="8" rx="1"/>
+      <rect x="18" y="8" width="4" height="8" rx="1"/>
+      <rect x="5" y="10" width="3" height="4" rx="0.5"/>
+      <rect x="16" y="10" width="3" height="4" rx="0.5"/>
+      <line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>
+    今日の練習
+  </div>
+  <div class="today-date" id="today-date"></div>
+</div>
+
+<div class="summary-bar">
+  <div class="summary-item">
+    <div class="summary-num" id="done-count">0</div>
+    <div class="summary-label">完了</div>
+  </div>
+  <div class="summary-sep"></div>
+  <div class="summary-item">
+    <div class="summary-num" id="total-count">0</div>
+    <div class="summary-label">合計</div>
+  </div>
+  <div class="summary-sep"></div>
+  <div class="summary-item">
+    <div class="summary-num" id="total-time">0</div>
+    <div class="summary-label">分</div>
+  </div>
+  <div class="summary-sep"></div>
+  <div class="summary-progress">
+    <div class="summary-prog-header">
+      <span>進捗</span><span id="prog-pct">0%</span>
+    </div>
+    <div class="summary-prog-bar">
+      <div class="summary-prog-fill" id="prog-fill" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="content" id="main-content"></div>
+
+<!-- 追加モーダル -->
+<div class="modal-overlay" id="add-modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      練習を追加
+    </div>
+    <div class="field-label">内容</div>
+    <input class="field-input" id="custom-title" placeholder="例: デスマッチ 10分" type="text">
+    <div class="field-label">プリセット</div>
+    <div class="preset-chips" id="preset-chips"></div>
+    <div class="field-label">時間（分）</div>
+    <input class="field-input" id="custom-time" type="number" placeholder="15" min="1" max="120">
+    <div class="field-label">カテゴリ</div>
+    <div class="preset-chips" id="cat-chips"></div>
+    <button class="modal-save" onclick="saveCustom()">追加する</button>
+  </div>
+</div>
+
+<div class="complete-bar">
+  <button class="complete-btn" id="complete-btn" onclick="completeAll()">
+    <!-- トロフィー -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9H4a2 2 0 01-2-2V5h4"/>
+      <path d="M18 9h2a2 2 0 002-2V5h-4"/>
+      <path d="M6 5h12v7a6 6 0 01-12 0V5z"/>
+      <line x1="12" y1="18" x2="12" y2="21"/>
+      <line x1="9" y1="21" x2="15" y2="21"/>
+    </svg>
+    今日の練習完了！
+  </button>
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><span class="nav-label">ホーム</span></a>
+  <a class="nav-item" href="knowledge.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><span class="nav-label">知識</span></a>
+  <a class="nav-item" href="tracker.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="nav-label">トラッカー</span></a>
+  <a class="nav-item active" href="routine.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><span class="nav-label">ルーティン</span></a>
+  <a class="nav-item" href="goal.html"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></div><span class="nav-label">目標</span></a>
+</nav>
+
+<script>
+// ========== SVGアイコン（タグ別） ==========
+const TAG_SVGS = {
+  'ウォームアップ': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10"/><path d="M12 6v6l4 2"/><path d="M20 2l2 2-2 2"/><path d="M18 2h4"/></svg>`,
+  'エイム':         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>`,
+  'フリック':       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+  'ムーブメント':   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="M9 12l-3 8"/><path d="M15 12l3 8"/><path d="M9 12c0-2 1.5-4 3-4s3 2 3 4l2 4H7l2-4z"/></svg>`,
+  'ピーク':         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  'マクロ':         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3,11 22,2 13,21 11,13 3,11"/></svg>`,
+  'エコノミー':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>`,
+  'メンタル':       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2a6 6 0 014.9 9.4L12 14l-2.4-2.6A6 6 0 019.5 2z"/><path d="M12 14v8"/><path d="M9 18h6"/></svg>`,
+  'コミュ':         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
+  'カスタム':       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+};
+
+const SECTION_SVGS = {
+  warmup: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10"/><path d="M12 6v6l4 2"/><path d="M20 2l2 2-2 2"/><path d="M18 2h4"/></svg>`,
+  focus:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>`,
+};
+
+// ========== データ ==========
+const FOCUS_META = {
+  aim:      { label:'エイム精度', svgTag:'エイム' },
+  flick:    { label:'フリック',   svgTag:'フリック' },
+  movement: { label:'ムーブメント', svgTag:'ムーブメント' },
+  peeks:    { label:'ピーク',     svgTag:'ピーク' },
+  macro:    { label:'マクロ',     svgTag:'マクロ' },
+  economy:  { label:'エコノミー', svgTag:'エコノミー' },
+  mental:   { label:'メンタル',   svgTag:'メンタル' },
+  comms:    { label:'コミュ',     svgTag:'コミュ' },
+};
+
+const FOCUS_MENUS = {
+  aim: [
+    { title:'Gridshot（Aimlabs）', time:10, tag:'エイム', detail:'精度重視モードで10分。急がず丁寧に' },
+    { title:'クロスヘア置き意識（デスマッチ）', time:10, tag:'エイム', detail:'最初の5分はキルより置き幅だけ意識する' },
+  ],
+  flick: [
+    { title:'Tile Frenzy（Aimlabs）', time:10, tag:'フリック', detail:'小さいターゲットへの短距離フリック練習' },
+    { title:'Centering（Kovaak\'s）', time:10, tag:'フリック', detail:'ランダム出現ターゲットを素早く捉える' },
+  ],
+  movement: [
+    { title:'カウンターストレイフ練習（レンジ）', time:10, tag:'ムーブメント', detail:'A→D→Aを止まってから撃つ練習。精度確認' },
+    { title:'ジグルピーク練習（カスタム）', time:10, tag:'ムーブメント', detail:'コーナーに向かってジグルだけ繰り返す' },
+  ],
+  peeks: [
+    { title:'ワイドスウィング練習', time:10, tag:'ピーク', detail:'コーナーに対して大きく出るタイミング練習' },
+    { title:'ピークタイミング意識（デスマッチ）', time:10, tag:'ピーク', detail:'相手のリロード・スキル後にピークする意識' },
+  ],
+  macro: [
+    { title:'VOD Review（直近の試合）', time:15, tag:'マクロ', detail:'ラウンド負けた場面だけ見る。15分以内で' },
+    { title:'ミニマップ意識（ランク）', time:0, tag:'マクロ', detail:'ランク中にミニマップを3秒おきに見る習慣' },
+  ],
+  economy: [
+    { title:'エコ判断の振り返り', time:10, tag:'エコノミー', detail:'昨日の試合でフォースバイがあったか確認' },
+  ],
+  mental: [
+    { title:'ゲーム前ルーティン', time:5, tag:'メンタル', detail:'深呼吸3回→ストレッチ→今日の意識を1つ決める' },
+    { title:'負け試合のリセット', time:5, tag:'メンタル', detail:'負けたら5分立つ。すぐ次に入らない' },
+  ],
+  comms: [
+    { title:'コールアウト練習（デスマッチ）', time:10, tag:'コミュ', detail:'見た情報を声に出す。1人でも言語化する' },
+  ],
+};
+
+const WARMUP_ITEMS = [
+  { id:'wu_stretch', title:'ストレッチ・準備運動', time:5, tag:'ウォームアップ', detail:'手首・肩・首をほぐす。最低5分は必要' },
+  { id:'wu_dm', title:'デスマッチ（ウォームアップ）', time:15, tag:'ウォームアップ', detail:'最初の5分はKD気にせず動きとクロスヘアだけ意識' },
+  { id:'wu_range', title:'レンジ（カウンターストレイフ確認）', time:5, tag:'ウォームアップ', detail:'ボットに対してA→D→撃を10回確認' },
+];
+
+const PRESETS = ['Gridshot（Aimlabs）','Tile Frenzy（Aimlabs）','デスマッチ','VOD Review','Kovaak\'sシナリオ','カスタム'];
+const CATS = ['エイム','フリック','ムーブメント','マクロ','メンタル','ウォームアップ'];
+
+let goal = { currentRank:'plat3', focusAreas:['aim','movement'], riotId:'' };
+let tasks = [];
+let customCat = '';
+
+function loadAll() {
+  try { const g = localStorage.getItem('actmate_goal'); if (g) goal = {...goal,...JSON.parse(g)}; } catch(e) {}
+  const today = todayKey();
+  try {
+    const t = localStorage.getItem('actmate_tasks_' + today);
+    if (t) { tasks = JSON.parse(t); return; }
+  } catch(e) {}
+  generateTasks();
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+
+function generateTasks() {
+  tasks = [];
+  WARMUP_ITEMS.forEach(w => tasks.push({...w, done:false}));
+  (goal.focusAreas || ['aim']).forEach(f => {
+    (FOCUS_MENUS[f] || []).slice(0, 2).forEach((m, i) => {
+      tasks.push({ id:`${f}_${i}`, title:m.title, time:m.time, tag:m.tag, detail:m.detail, done:false });
+    });
+  });
+}
+
+function saveTasks() {
+  localStorage.setItem('actmate_tasks_' + todayKey(), JSON.stringify(tasks));
+  try {
+    const days = JSON.parse(localStorage.getItem('actmate_playdays') || '[]');
+    const label = new Date().toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' });
+    if (!days.includes(label)) { days.push(label); localStorage.setItem('actmate_playdays', JSON.stringify(days)); }
+  } catch(e) {}
+}
+
+// ========== レンダリング ==========
+function render() {
+  const content = document.getElementById('main-content');
+  if (tasks.length === 0) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/>
+            <rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+        </div>
+        <p>まだルーティンがありません。<br>目標を設定すると自動で生成されます。</p>
+        <a href="goal.html" class="goto-goal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.5" fill="white" stroke="none"/></svg>
+          目標を設定する
+        </a>
+      </div>`;
+    return;
+  }
+
+  const warmup = tasks.filter(t => t.tag === 'ウォームアップ');
+  const focus  = tasks.filter(t => t.tag !== 'ウォームアップ');
+  let html = '';
+
+  if (warmup.length > 0) {
+    html += `
+      <div class="section-header">
+        <div class="section-label-row">
+          ${SECTION_SVGS.warmup}
+          <span class="section-label">ウォームアップ</span>
+        </div>
+      </div>`;
+    warmup.forEach(t => { html += taskHTML(t); });
+  }
+
+  if (focus.length > 0) {
+    html += `
+      <div class="section-header" style="margin-top:20px">
+        <div class="section-label-row">
+          ${SECTION_SVGS.focus}
+          <span class="section-label">今日のフォーカス</span>
+        </div>
+        <button class="section-action" onclick="window.location.href='goal.html'">変更</button>
+      </div>
+      <div class="focus-chips">
+        ${(goal.focusAreas||[]).map(f => {
+          const m = FOCUS_META[f];
+          return `<span class="focus-chip">${TAG_SVGS[m?.svgTag]||''}${m?.label||f}</span>`;
+        }).join('')}
+      </div>`;
+    focus.forEach(t => { html += taskHTML(t); });
+  }
+
+  html += `
+    <button class="add-btn" onclick="openModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      練習を追加する
+    </button>`;
+
+  content.innerHTML = html;
+  updateSummary();
+}
+
+function taskHTML(t) {
+  const svgTag = TAG_SVGS[t.tag] || TAG_SVGS['カスタム'];
+  return `
+    <div class="task-card ${t.done ? 'done' : ''}" onclick="toggleTask('${t.id}')">
+      <div class="task-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20,6 9,17 4,12"/>
+        </svg>
+      </div>
+      <div class="task-body">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">
+          <span class="task-tag">${svgTag}${t.tag}</span>
+          ${t.time ? `<span class="task-time">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            ${t.time}分
+          </span>` : ''}
+        </div>
+        ${t.detail ? `<div class="task-detail">${t.detail}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function updateSummary() {
+  const done  = tasks.filter(t => t.done).length;
+  const total = tasks.length;
+  const time  = tasks.reduce((s,t) => s+(t.time||0), 0);
+  const pct   = total === 0 ? 0 : Math.round((done/total)*100);
+  document.getElementById('done-count').textContent  = done;
+  document.getElementById('total-count').textContent = total;
+  document.getElementById('total-time').textContent  = time;
+  document.getElementById('prog-pct').textContent    = pct + '%';
+  document.getElementById('prog-fill').style.width   = pct + '%';
+  const btn = document.getElementById('complete-btn');
+  btn.classList.toggle('show', done === total && total > 0);
+}
+
+function toggleTask(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; saveTasks(); render(); }
+}
+
+function openModal() {
+  document.getElementById('custom-title').value = '';
+  document.getElementById('custom-time').value  = '';
+  customCat = '';
+  document.getElementById('preset-chips').innerHTML = PRESETS.map(p =>
+    `<button class="preset-chip" onclick="selectPreset(this,'${p}')">${p}</button>`
+  ).join('');
+  document.getElementById('cat-chips').innerHTML = CATS.map(c =>
+    `<button class="preset-chip" onclick="selectCat(this,'${c}')">${c}</button>`
+  ).join('');
+  document.getElementById('add-modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
+
+function selectPreset(el, val) {
+  document.querySelectorAll('#preset-chips .preset-chip').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('custom-title').value = val;
+}
+
+function selectCat(el, val) {
+  document.querySelectorAll('#cat-chips .preset-chip').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  customCat = val;
+}
+
+function saveCustom() {
+  const title = document.getElementById('custom-title').value.trim();
+  const time  = parseInt(document.getElementById('custom-time').value) || 0;
+  if (!title) return;
+  tasks.push({ id:'custom_'+Date.now(), title, time, tag:customCat||'カスタム', detail:'', done:false });
+  saveTasks(); closeModal(); render();
+}
+
+function completeAll() {
+  alert('お疲れ様！\n今日の練習完了！\n\n継続が一番の上達。明日も頑張ろう');
+  document.getElementById('complete-btn').classList.remove('show');
+}
+
+// Init
+const now = new Date();
+document.getElementById('today-date').textContent =
+  now.toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' });
+loadAll();
+render();
+</script>
+</body>
+</html>
