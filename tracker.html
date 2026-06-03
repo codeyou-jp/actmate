@@ -215,6 +215,7 @@
     <div class="page-header-label">ACTMATE / トラッカー</div>
     <div class="page-header-title">スタッツ & AI診断</div>
   </div>
+  <div id="cache-badge" style="font-size:11px;color:var(--green);background:rgba(34,197,94,0.1);border-radius:100px;padding:4px 12px;opacity:0;transition:opacity 0.5s">データを更新しました</div>
   <div class="page-header-user" id="pc-header-user" style="display:none">
     <div class="page-header-rank">
       <img id="pc-rank-img" src="" width="22" height="22" style="display:none;object-fit:contain">
@@ -431,9 +432,25 @@ function switchTab(name,btn){
 }
 
 // 自動検索（ページ読み込み時）
+// ========== キャッシュ（1時間） ==========
+const CACHE_TTL = 60 * 60 * 1000; // 1時間
+function getCache(key){ try{ const c=JSON.parse(localStorage.getItem(key)||'null'); if(c&&Date.now()-c.ts<CACHE_TTL)return c.data; }catch(e){} return null; }
+function setCache(key,data){ try{ localStorage.setItem(key,JSON.stringify({ts:Date.now(),data})); }catch(e){} }
+
 async function autoSearch(){
   const {name,tag,region}=_user;
   if(!name||!tag)return;
+
+  const cacheKey=`actmate_tracker_${name}_${tag}_${region}`;
+  const cached=getCache(cacheKey);
+  if(cached){
+    // キャッシュヒット：即座に表示
+    renderAll(name,tag,cached.mmrData,cached.matchData);
+    // バックグラウンドで更新（UIは変えない）
+    refreshInBackground(name,tag,region,cacheKey);
+    return;
+  }
+
   setState('loading');
   try{
     const [mmrRes,matchRes]=await Promise.all([
@@ -443,8 +460,31 @@ async function autoSearch(){
     if(!mmrRes.ok)throw new Error('プレイヤーが見つかりません ('+mmrRes.status+')');
     const mmrData=await mmrRes.json();
     const matchData=matchRes.ok?await matchRes.json():null;
+    setCache(cacheKey,{mmrData,matchData});
     renderAll(name,tag,mmrData,matchData);
   }catch(e){setState('error',e.message||'データ取得に失敗しました。');}
+}
+
+async function refreshInBackground(name,tag,region,cacheKey){
+  try{
+    const [mmrRes,matchRes]=await Promise.all([
+      henriApi('valorant/v2/mmr/'+region+'/'+encodeURIComponent(name)+'/'+encodeURIComponent(tag)),
+      henriApi('valorant/v3/matches/'+region+'/'+encodeURIComponent(name)+'/'+encodeURIComponent(tag),{mode:'competitive',size:10})
+    ]);
+    if(!mmrRes.ok)return;
+    const mmrData=await mmrRes.json();
+    const matchData=matchRes.ok?await matchRes.json():null;
+    setCache(cacheKey,{mmrData,matchData});
+    // キャッシュ更新バッジを表示
+    showCacheRefreshed();
+  }catch(e){}
+}
+
+function showCacheRefreshed(){
+  const el=document.getElementById('cache-badge');
+  if(!el)return;
+  el.style.opacity='1';
+  setTimeout(()=>el.style.opacity='0',3000);
 }
 
 function findMe(match,name,tag){
@@ -461,7 +501,8 @@ function renderAll(name,tag,mmrData,matchData){
   const matches=matchData?.data||[];
 
   let wins=0,losses=0,tKills=0,tDeaths=0,tAssists=0,tHS=0,tBody=0,tLeg=0,tACS=0,mc=0;
-  matches.forEach(m=>{const me=findMe(m,name,tag);if(!me)return;mc++;tKills+=me.stats?.kills||0;tDeaths+=me.stats?.deaths||0;tAssists+=me.stats?.assists||0;tHS+=me.stats?.headshots||0;tBody+=me.stats?.bodyshots||0;tLeg+=me.stats?.legshots||0;tACS+=me.stats?.score?Math.round(me.stats.score/(m.metadata?.rounds_played||1)):0;const myTeam=me.team?.toLowerCase();if(m.teams?.[myTeam]?.has_won)wins++;else losses++;});
+  const agentCount={};
+  matches.forEach(m=>{const me=findMe(m,name,tag);if(!me)return;mc++;tKills+=me.stats?.kills||0;tDeaths+=me.stats?.deaths||0;tAssists+=me.stats?.assists||0;tHS+=me.stats?.headshots||0;tBody+=me.stats?.bodyshots||0;tLeg+=me.stats?.legshots||0;tACS+=me.stats?.score?Math.round(me.stats.score/(m.metadata?.rounds_played||1)):0;const myTeam=me.team?.toLowerCase();if(m.teams?.[myTeam]?.has_won)wins++;else losses++;if(me.character)agentCount[me.character]=(agentCount[me.character]||0)+1;});
   const kd=tDeaths>0?(tKills/tDeaths).toFixed(2):'--';
   const hsTotal=tHS+tBody+tLeg;
   const hsPct=hsTotal>0?Math.round((tHS/hsTotal)*100):0;
@@ -501,13 +542,73 @@ function renderAll(name,tag,mmrData,matchData){
   document.getElementById('matches-card').innerHTML=matchListHTML?`<div class="card-title">直近5試合</div>${matchListHTML}`:'<p style="text-align:center;color:var(--muted);font-size:13px">試合データがありません</p>';
   document.getElementById('tracker-link').href='https://tracker.gg/valorant/profile/riot/'+encodeURIComponent(name)+'%23'+encodeURIComponent(tag)+'/overview';
 
-  buildDiagTab(hsPct,parseFloat(kd),acs,parseFloat(avgAssists),mc,currentRank);
+  const topAgent=Object.entries(agentCount).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+  buildDiagTab(hsPct,parseFloat(kd),acs,parseFloat(avgAssists),mc,currentRank,topAgent);
   _posData={};
   setState('result');
   fetchMatchDetails(matches,name,tag);
 }
 
-function buildDiagTab(hsPct,kd,acs,avgAssists,mc,rankStr){
+// ========== エージェントロール定義 ==========
+const AGENT_ROLES = {
+  // デュエリスト
+  Jett:'duelist',Neon:'duelist',Reyna:'duelist',Raze:'duelist',Phoenix:'duelist',Yoru:'duelist',Iso:'duelist',Waylay:'duelist',
+  // コントローラー
+  Omen:'controller',Brimstone:'controller',Viper:'controller',Astra:'controller',Harbor:'controller',Clove:'controller',
+  // イニシエーター
+  Sova:'initiator',Breach:'initiator',Skye:'initiator',Kay_O:'initiator',Fade:'initiator',Gekko:'initiator',Tejo:'initiator',
+  // センチネル
+  Sage:'sentinel',Cypher:'sentinel',Killjoy:'sentinel',Chamber:'sentinel',Deadlock:'sentinel',Vyse:'sentinel',
+};
+const ROLE_LABELS = {duelist:'デュエリスト',controller:'コントローラー',initiator:'イニシエーター',sentinel:'センチネル'};
+const ROLE_ADVICE = {
+  duelist:{
+    high_hs:`エイム精度は高水準。Jett/Neonならダッシュ後の初弾ヘッショを意識して、逃げながらキルを取るシーンを増やしましょう。`,
+    low_hs:`デュエリストはHS率が直結してキル取得率に影響します。スプレー撃ちをやめて初弾1発に集中する練習を優先してください。`,
+    low_kd:`デュエリストでK/Dが低い場合、エントリータイミングが早すぎるか遅すぎるかのどちらかです。スキルで有利を作ってからピークする癖をつけましょう。`,
+    good:`エントリーの役割をこなせています。次はサイト後のポストプラント立ち回りを磨きましょう。`,
+  },
+  controller:{
+    high_hs:`コントローラーでのHS率は優秀です。スモークを展開しながらも積極的にフラッグを取りに行ける立ち位置を意識してください。`,
+    low_hs:`コントローラーはスモーク展開が最優先ですが、自分がデュエルに負け続けると味方に負担がかかります。安全な角度からの交戦を選びましょう。`,
+    low_kd:`コントローラーでK/Dが低い場合は無理なデュエルを避けることが先決です。スモーク後の詰め方とチームとのタイミング合わせを最優先にしましょう。`,
+    good:`スモーク展開と戦闘のバランスが取れています。スモークのタイミングとカバー意識をさらに磨きましょう。`,
+  },
+  initiator:{
+    high_hs:`イニシエーターでのHS率は高い。フラッシュ後の確実なキル取得ができているはずです。情報スキルの使い方も見直してさらに貢献度を上げましょう。`,
+    low_hs:`イニシエーターでスキルを使って有利を作ってもデュエルで負けては意味がありません。スキル後の交戦状況を有利な状態で作る意識を高めましょう。`,
+    low_kd:`イニシエーターのK/Dよりアシストに着目してください。スキルで情報・フラッシュを提供してチームのキルを増やすことが本来の役割です。`,
+    good:`情報とエントリーのサポートができています。スキルのタイミングとチームとのコミュニケーションをさらに強化しましょう。`,
+  },
+  sentinel:{
+    high_hs:`センチネルでのHS率は優秀です。守備的なポジションからの精密なバレットを活かして、アンカーとしての役割を全うしましょう。`,
+    low_hs:`センチネルはガジェットでエリアを守ることが仕事ですが、ガジェット破壊後のデュエルで負けるとサイトを失います。安定したデュエル力も磨きましょう。`,
+    low_kd:`センチネルで守備を固めながらもデスが多い場合、ガジェットを過信してアグレッシブに動きすぎている可能性があります。より遅延プレイを意識しましょう。`,
+    good:`ガジェット管理とデュエルのバランスが取れています。ローテーションのタイミングをさらに洗練させましょう。`,
+  },
+};
+
+function buildAgentCard(agent, role, hsPct, kd, bench) {
+  if(!agent||!role) return '';
+  const advice = ROLE_ADVICE[role];
+  if(!advice) return '';
+  let tip = advice.good;
+  if(hsPct < bench.hs - 4) tip = advice.low_hs;
+  else if(kd < bench.kd - 0.15) tip = advice.low_kd;
+  else if(hsPct >= bench.hs) tip = advice.high_hs;
+  const roleLabel = ROLE_LABELS[role]||role;
+  const roleColor = {duelist:'#FF4655',controller:'#8b5cf6',initiator:'#3b82f6',sentinel:'#22c55e'}[role]||'#888';
+  return `
+  <div class="card" style="margin-bottom:10px;border-left:3px solid ${roleColor}">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:700;background:${roleColor}22;color:${roleColor};border-radius:100px;padding:3px 10px">${roleLabel}</div>
+      <div style="font-size:13px;font-weight:800">${agent} コーチング</div>
+    </div>
+    <div style="font-size:12px;line-height:1.7;color:var(--text)">${tip}</div>
+  </div>`;
+}
+
+function buildDiagTab(hsPct,kd,acs,avgAssists,mc,rankStr,topAgent=null){
   if(!mc){document.getElementById('diag-score-area').innerHTML='';return;}
   const bench=getBench(rankStr);const target=getNextBench(bench.key);let score=0;const items=[];
   const hsDiff=bench.hs-hsPct;
@@ -525,6 +626,18 @@ function buildDiagTab(hsPct,kd,acs,avgAssists,mc,rankStr){
   const circ=2*Math.PI*26,offset=circ-(pct/100)*circ;
   document.getElementById('diag-score-area').innerHTML=`<div class="diag-score-wrap"><div class="diag-score-circle"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="26" stroke="#f0e0e2" stroke-width="6"/><circle cx="32" cy="32" r="26" stroke="${col}" stroke-width="6" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round"/></svg><span class="diag-score-num" style="color:${col}">${pct}</span></div><div><div class="diag-score-sub">コーチングスコア</div><div class="diag-score-label" style="color:${col}">${lbl}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">直近${mc}試合 / 比較: <strong style="color:${col}">${bench.label}</strong>平均</div></div></div>`;
   document.getElementById('diag-items-card').innerHTML=items.map(item=>`<div class="diag-item"><div class="diag-sev ${item.sev}">${item.icon}</div><div class="diag-content"><div class="diag-row"><span class="diag-key">${item.key}</span><span class="diag-val ${item.vc}">${item.val}</span></div>${item.text?`<div class="diag-text">${item.text}</div>${item.bar?benchBar(item.bar):''}<a class="diag-btn" href="knowledge.html?focus=${item.focus}">${item.btn} →</a>`:`<div class="diag-ok">✓ ${bench.label}平均を上回っています</div>`}</div></div>`).join('');
+
+  // エージェント別アドバイスカード
+  if(topAgent){
+    const agentKey = topAgent.replace(/[/ ]/g,'_');
+    const role = AGENT_ROLES[topAgent] || AGENT_ROLES[agentKey] || null;
+    const agentCardHtml = buildAgentCard(topAgent, role, hsPct, kd, bench);
+    if(agentCardHtml){
+      const wrap = document.createElement('div');
+      wrap.innerHTML = agentCardHtml;
+      document.getElementById('panel-diag').appendChild(wrap.firstElementChild);
+    }
+  }
 }
 
 function benchBar({user,bench,target,max}){const uP=Math.min(100,(user/max)*100);const bP=Math.min(100,(bench/max)*100);const tP=Math.min(100,(target/max)*100);return`<div class="bench-bar"><div class="bench-bar-track"><div class="bench-bar-fill" style="width:${uP}%;background:#FF4655;height:4px;border-radius:100px"></div><div style="position:absolute;top:-4px;bottom:-4px;left:${bP}%;width:2px;background:var(--muted);border-radius:2px"></div><div style="position:absolute;top:-4px;bottom:-4px;left:${tP}%;width:2px;background:var(--green);border-radius:2px"></div></div></div><div style="display:flex;gap:12px;margin-bottom:4px"><span style="font-size:10px;color:var(--muted)">帯平均: <strong>${bench}</strong></span><span style="font-size:10px;color:var(--green)">目標: <strong>${target}</strong></span></div>`;}
