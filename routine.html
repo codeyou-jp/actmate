@@ -251,6 +251,15 @@
     <div class="summary-label">分</div>
   </div>
   <div class="summary-sep"></div>
+  <!-- ストリーク -->
+  <div id="streak-badge" style="display:none;flex-direction:column;align-items:center;gap:2px">
+    <div style="display:flex;align-items:center;gap:3px">
+      <span class="streak-fire" style="font-size:16px;transition:opacity 0.3s">🔥</span>
+      <span class="streak-num" style="font-size:22px;font-weight:900;color:var(--red)">0</span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);font-weight:600">連続</div>
+  </div>
+  <div class="summary-sep"></div>
   <div class="summary-progress">
     <div class="summary-prog-header">
       <span>進捗</span><span id="prog-pct">0%</span>
@@ -375,9 +384,10 @@ const FOCUS_MENUS = {
 };
 
 const WARMUP_ITEMS = [
-  { id:'wu_stretch', title:'ストレッチ・準備運動', time:5, tag:'ウォームアップ', detail:'手首・肩・首をほぐす。最低5分は必要' },
-  { id:'wu_dm', title:'デスマッチ（ウォームアップ）', time:15, tag:'ウォームアップ', detail:'最初の5分はKD気にせず動きとクロスヘアだけ意識' },
-  { id:'wu_range', title:'レンジ（カウンターストレイフ確認）', time:5, tag:'ウォームアップ', detail:'ボットに対してA→D→撃を10回確認' },
+  { id:'wu_stretch', title:'ストレッチ・準備運動', time:5, tag:'ウォームアップ', detail:'手首・肩・首をほぐす。Depが試合前に必ずやる習慣。最低5分。' },
+  { id:'wu_range_static', title:'レンジ 静止ボット（Sheriff）', time:5, tag:'ウォームアップ', detail:'Meteorスタイル。Sheriffで静止ボットにゆっくりHS。急がず丁寧に10発連続で決まるまで。' },
+  { id:'wu_range_move', title:'レンジ 移動ボット（Vandal）', time:5, tag:'ウォームアップ', detail:'Absolスタイル。移動ボットにVandalでHS。カウンターストレイフを意識。' },
+  { id:'wu_dm', title:'デスマッチ（感覚合わせ）', time:10, tag:'ウォームアップ', detail:'Depが毎日やる方法。最初の5分はKD度外視でクロスヘア置きだけ意識。後半5分でフルリセット。' },
 ];
 
 const PRESETS = ['Gridshot（Aimlabs）','Tile Frenzy（Aimlabs）','デスマッチ','VOD Review','Kovaak\'sシナリオ','カスタム'];
@@ -563,9 +573,58 @@ function saveCustom() {
   saveTasks(); closeModal(); render();
 }
 
+function getStreak() {
+  try {
+    const days = JSON.parse(localStorage.getItem('actmate_complete_days') || '[]');
+    if (!days.length) return 0;
+    let streak = 0;
+    const today = new Date(); today.setHours(0,0,0,0);
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const key = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+      if (days.includes(key)) streak++;
+      else if (i > 0) break;
+    }
+    return streak;
+  } catch(e) { return 0; }
+}
+
+function recordCompleteDay() {
+  try {
+    const days = JSON.parse(localStorage.getItem('actmate_complete_days') || '[]');
+    const key = todayKey();
+    if (!days.includes(key)) { days.push(key); localStorage.setItem('actmate_complete_days', JSON.stringify(days)); }
+  } catch(e) {}
+}
+
 function completeAll() {
-  alert('お疲れ様！\n今日の練習完了！\n\n継続が一番の上達。明日も頑張ろう');
+  recordCompleteDay();
+  const streak = getStreak();
+  const msg = streak >= 7
+    ? `🔥 ${streak}日連続！本物のルーティンが身についてきた。`
+    : streak >= 3
+    ? `✅ ${streak}日連続達成！この調子で続けよう。`
+    : '今日の練習完了！継続が一番の上達。明日も頑張ろう。';
+  showStreakToast(streak, msg);
   document.getElementById('complete-btn').classList.remove('show');
+  renderStreakBadge();
+}
+
+function showStreakToast(streak, msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#111;color:white;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:600;z-index:999;text-align:center;max-width:300px;line-height:1.5;box-shadow:0 4px 20px rgba(0,0,0,0.3)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+function renderStreakBadge() {
+  const streak = getStreak();
+  const el = document.getElementById('streak-badge');
+  if (!el || streak === 0) return;
+  el.style.display = 'flex';
+  el.querySelector('.streak-num').textContent = streak;
+  el.querySelector('.streak-fire').style.opacity = streak >= 3 ? '1' : '0.4';
 }
 
 // Init
@@ -574,6 +633,7 @@ document.getElementById('today-date').textContent =
   now.toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' });
 loadAll();
 render();
+renderStreakBadge();
 </script>
 </div></div>
 

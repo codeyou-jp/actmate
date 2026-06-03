@@ -60,6 +60,18 @@
   .tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; background: var(--red-light); color: var(--red); border: 1px solid #ffd0d5; transition: background 0.2s, color 0.2s; }
   .tag.highlight { background: var(--red); color: white; border-color: var(--red); }
 
+  /* 検索バー */
+  .search-bar { padding: 12px 16px; background: white; border-bottom: 1.5px solid var(--border); position: sticky; top: 0; z-index: 30; }
+  @media(min-width:769px){ .search-bar{ top:65px; padding:12px 32px; } }
+  .search-input-wrap { display: flex; align-items: center; gap: 10px; background: var(--off-white); border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 14px; transition: border-color 0.15s; }
+  .search-input-wrap:focus-within { border-color: var(--red); }
+  .search-input-wrap svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+  .search-input { flex: 1; border: none; background: none; font-size: 14px; font-family: inherit; outline: none; color: var(--text); }
+  .search-input::placeholder { color: var(--muted); }
+  .search-clear { border: none; background: none; cursor: pointer; color: var(--muted); font-size: 16px; padding: 0; line-height: 1; display: none; }
+  .search-clear.show { display: block; }
+  .no-results { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
+
   .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1.5px solid var(--border); display: flex; padding: 8px 0 22px; z-index: 100; }
   .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; padding: 4px 0; }
   .nav-icon svg { width: 22px; height: 22px; color: var(--muted); }
@@ -147,6 +159,15 @@
   <div class="hero-sub">理論・エージェント・プロの練習を体系的に学ぶ</div>
 </div>
 
+<!-- 検索バー -->
+<div class="search-bar">
+  <div class="search-input-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input class="search-input" id="kb-search" placeholder="キーワードで検索（例: クロスヘア、マクロ）" oninput="onSearch(this.value)">
+    <button class="search-clear" id="search-clear" onclick="clearSearch()">×</button>
+  </div>
+</div>
+
 <!-- AI診断からの誘導バナー -->
 <div class="focus-banner" id="focus-banner">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
@@ -230,10 +251,115 @@
     </div>
     <div class="kb-tags">
       <span class="tag" id="tag-aim-microflick">マイクロフリック</span>
-      <span class="tag">TenZ</span><span class="tag">yay</span><span class="tag">aspas</span><span class="tag">nAts</span><span class="tag">Kovaak's</span>
+      <span class="tag">Meteor</span><span class="tag">Dep</span><span class="tag">aspas</span><span class="tag">Absol</span><span class="tag">Kovaak's</span>
     </div>
   </a>
 
+  <div class="section-label">エイム理論</div>
+
+  <div class="kb-card" id="card-crosshair-place" data-tags="クロスヘア エイム 置き 立ち位置 初弾">
+    <div class="kb-inner">
+      <div class="kb-icon light">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+      </div>
+      <div class="kb-text">
+        <div class="kb-title">クロスヘアプレイスメント</div>
+        <div class="kb-desc">相手の頭が来る場所にあらかじめ置く。移動量ゼロで勝てるエイムの根本</div>
+      </div>
+    </div>
+    <div class="kb-tags">
+      <span class="tag">エイム基礎</span><span class="tag">初弾精度</span><span class="tag">HS率向上</span><span class="tag">全ランク共通</span>
+    </div>
+    <div style="padding:0 20px 16px;font-size:12px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border);margin-top:2px;padding-top:12px">
+      <strong style="color:var(--text)">なぜ重要か：</strong>エイムの上手い下手の90%はここで決まる。頭の高さにクロスヘアを合わせるだけで、初弾HS率が劇的に改善する。<br>
+      <strong style="color:var(--text)">練習方法：</strong>デスマッチ中に「今自分のクロスヘアはどこにある？」を常に自問する。コーナーを回る前に必ず頭の高さへ。
+    </div>
+  </div>
+
+  <div class="kb-card" id="card-counter-strafe" data-tags="カウンターストレイフ 移動 止まる 精度 ムーブメント">
+    <div class="kb-inner">
+      <div class="kb-icon light">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/><path d="M12 5l-7 7 7 7" opacity="0.4"/></svg>
+      </div>
+      <div class="kb-text">
+        <div class="kb-title">カウンターストレイフ</div>
+        <div class="kb-desc">A方向移動中にDを一瞬押して完全停止。動きながら撃つと精度が0に近い</div>
+      </div>
+    </div>
+    <div class="kb-tags">
+      <span class="tag">ムーブメント</span><span class="tag">精度向上</span><span class="tag">基礎</span>
+    </div>
+    <div style="padding:0 20px 16px;font-size:12px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border);margin-top:2px;padding-top:12px">
+      <strong style="color:var(--text)">仕組み：</strong>VALORANTは移動中の拡散が非常に大きい。完全停止した瞬間だけ精度が戻る。<br>
+      <strong style="color:var(--text)">練習：</strong>レンジでA→D→撃を繰り返す。止まった感触を体に覚えさせる。Meteorのウォームアップの核心。
+    </div>
+  </div>
+
+  <div class="section-label">立ち回り</div>
+
+  <div class="kb-card" id="card-trade" data-tags="トレード カバー 味方 死ぬ 交換 サポート">
+    <div class="kb-inner">
+      <div class="kb-icon light">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      </div>
+      <div class="kb-text">
+        <div class="kb-title">トレード理論</div>
+        <div class="kb-desc">味方がデスした瞬間に即座にキルを取り返す。人数有利を維持する最重要スキル</div>
+      </div>
+    </div>
+    <div class="kb-tags">
+      <span class="tag">立ち回り</span><span class="tag">カバー</span><span class="tag">人数管理</span><span class="tag">K/D向上</span>
+    </div>
+    <div style="padding:0 20px 16px;font-size:12px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border);margin-top:2px;padding-top:12px">
+      <strong style="color:var(--text)">なぜ重要か：</strong>味方が死んで放置すると常に数的不利になる。トレードは最悪の状況を「イーブン」に戻す保険。<br>
+      <strong style="color:var(--text)">意識すること：</strong>味方が前に出たら自分はその後ろに。「カバーできる距離」にいつもいること。
+    </div>
+  </div>
+
+  <div class="kb-card" id="card-economy" data-tags="エコノミー お金 フォースバイ エコ バイ 武器購入 管理">
+    <div class="kb-inner">
+      <div class="kb-icon light">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      </div>
+      <div class="kb-text">
+        <div class="kb-title">エコノミー管理</div>
+        <div class="kb-desc">いつフルバイ・セーブ・フォースするか。正しい判断がラウンド勝率に直結</div>
+      </div>
+    </div>
+    <div class="kb-tags">
+      <span class="tag">経済</span><span class="tag">フルバイ</span><span class="tag">エコ</span><span class="tag">フォースバイ</span>
+    </div>
+    <div style="padding:0 20px 16px;font-size:12px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border);margin-top:2px;padding-top:12px">
+      <strong style="color:var(--text)">基本ルール：</strong>負けたら全員でセーブ。勝ったらフルバイ。フォースバイは「次のラウンドを捨てる賭け」と理解すること。<br>
+      <strong style="color:var(--text)">よくあるミス：</strong>チームの中で1人だけ違う選択をすること。必ず話し合って全員で揃える。
+    </div>
+  </div>
+
+  <div class="section-label">メンタル</div>
+
+  <div class="kb-card" id="card-tilt" data-tags="メンタル 傾き チルト リセット 精神 負け 連敗">
+    <div class="kb-inner">
+      <div class="kb-icon light">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 01-4.96-.46 2.5 2.5 0 01-2.96-3.08 3 3 0 01-.34-5.58 2.5 2.5 0 011.32-4.24 2.5 2.5 0 014.44-1.14z"/><path d="M14.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 004.96-.46 2.5 2.5 0 002.96-3.08 3 3 0 00.34-5.58 2.5 2.5 0 00-1.32-4.24 2.5 2.5 0 00-4.44-1.14z"/></svg>
+      </div>
+      <div class="kb-text">
+        <div class="kb-title">チルト防止・メンタルリセット</div>
+        <div class="kb-desc">連敗中でも最高のパフォーマンスを出す思考法。プロが実践するリセット術</div>
+      </div>
+    </div>
+    <div class="kb-tags">
+      <span class="tag">メンタル</span><span class="tag">傾き防止</span><span class="tag">連敗対策</span><span class="tag">集中力</span>
+    </div>
+    <div style="padding:0 20px 16px;font-size:12px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border);margin-top:2px;padding-top:12px">
+      <strong style="color:var(--text)">3連敗ルール：</strong>3連敗したら必ずやめる。感情的な状態でランクを回し続けると、さらに落ちるだけ。<br>
+      <strong style="color:var(--text)">リセット方法：</strong>立ち上がって水を飲む→深呼吸3回→「今日1回でもいいプレーができたか？」を自問する。
+    </div>
+  </div>
+
+</div>
+<div id="no-results" class="no-results" style="display:none">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  「<span id="no-results-q"></span>」の検索結果はありません
 </div>
 
 <nav class="bottom-nav">
@@ -258,6 +384,37 @@ function clearFocus() {
   document.getElementById('focus-banner').classList.remove('visible');
   document.querySelectorAll('.kb-card.focused').forEach(c=>c.classList.remove('focused'));
   document.querySelectorAll('.tag.highlight').forEach(t=>t.classList.remove('highlight'));
+}
+
+// ========== 検索 ==========
+function onSearch(q) {
+  const clear = document.getElementById('search-clear');
+  clear.classList.toggle('show', q.length > 0);
+  const cards = document.querySelectorAll('.kb-card, [data-tags]');
+  const sections = document.querySelectorAll('.section-label');
+  const noRes = document.getElementById('no-results');
+  let found = 0;
+  if (!q.trim()) {
+    cards.forEach(c => c.style.display = '');
+    sections.forEach(s => s.style.display = '');
+    noRes.style.display = 'none';
+    return;
+  }
+  const kw = q.trim().toLowerCase();
+  cards.forEach(c => {
+    const text = (c.textContent + ' ' + (c.dataset.tags||'')).toLowerCase();
+    const match = text.includes(kw);
+    c.style.display = match ? '' : 'none';
+    if (match) found++;
+  });
+  sections.forEach(s => s.style.display = 'none');
+  noRes.style.display = found === 0 ? 'block' : 'none';
+  if (found === 0) document.getElementById('no-results-q').textContent = q;
+}
+
+function clearSearch() {
+  document.getElementById('kb-search').value = '';
+  onSearch('');
 }
 
 window.addEventListener('DOMContentLoaded', () => {
