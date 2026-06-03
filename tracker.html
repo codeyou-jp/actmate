@@ -126,7 +126,8 @@
   .diag-score-label{font-size:14px;font-weight:800;}
   .diag-item{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
   .diag-item:last-child{border-bottom:none;padding-bottom:0;}
-  .diag-sev{width:34px;height:34px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .diag-sev{width:34px;height:34px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .diag-sev svg{width:18px;height:18px;}
   .diag-sev.bad{background:rgba(255,70,85,0.1);}
   .diag-sev.warn{background:rgba(245,158,11,0.1);}
   .diag-sev.good{background:rgba(34,197,94,0.1);}
@@ -225,8 +226,8 @@
 <!-- PC用タブバー -->
 <div class="pc-tab-bar" id="pc-tab-bar">
   <button class="pc-tab-btn active" onclick="switchTab('stats',this)">スタッツ</button>
-  <button class="pc-tab-btn" onclick="switchTab('diag',this)">🧠 AI診断</button>
-  <button class="pc-tab-btn" onclick="switchTab('pos',this)">📍 ポジション</button>
+  <button class="pc-tab-btn" onclick="switchTab('diag',this)" style="display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 01-4.96-.46 2.5 2.5 0 01-2.96-3.08 3 3 0 01-.34-5.58 2.5 2.5 0 011.32-4.24 2.5 2.5 0 014.44-1.14z"/><path d="M14.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 004.96-.46 2.5 2.5 0 002.96-3.08 3 3 0 00.34-5.58 2.5 2.5 0 00-1.32-4.24 2.5 2.5 0 00-4.44-1.14z"/></svg>AI診断</button>
+  <button class="pc-tab-btn" onclick="switchTab('pos',this)" style="display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>ポジション</button>
 </div>
 
 <!-- モバイル用赤ヘッダー（検索後） -->
@@ -242,8 +243,8 @@
   </div>
   <div class="tab-bar visible">
     <button class="tab-btn active" onclick="switchTab('stats',this)">スタッツ</button>
-    <button class="tab-btn" onclick="switchTab('diag',this)">🧠 AI診断</button>
-    <button class="tab-btn" onclick="switchTab('pos',this)">📍 ポジション</button>
+    <button class="tab-btn" onclick="switchTab('diag',this)">AI診断</button>
+    <button class="tab-btn" onclick="switchTab('pos',this)">ポジション</button>
   </div>
 </div>
 
@@ -280,7 +281,7 @@
 
 <!-- タブ③：ポジション分析 -->
 <div class="tab-panel" id="panel-pos">
-  <div id="pos-loading" style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">⏳ 詳細データを取得中...</div>
+  <div id="pos-loading" style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px"><div class="spinner" style="margin:0 auto 10px"></div>詳細データを取得中...</div>
   <div id="pos-content" style="display:none">
     <div id="pos-overview"></div>
     <div id="pos-map-cards"></div>
@@ -296,7 +297,7 @@
     <div style="display:flex;background:rgba(0,0,0,0.15);border-radius:100px;padding:3px">
       <button class="detail-phase-btn active" onclick="switchDetailPhase('all',this)" style="background:white;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.12);border-radius:100px;">すべて</button>
       <button class="detail-phase-btn" onclick="switchDetailPhase('attack',this)">⚔ 攻め</button>
-      <button class="detail-phase-btn" onclick="switchDetailPhase('defense',this)">🛡 守り</button>
+      <button class="detail-phase-btn" onclick="switchDetailPhase('defense',this)" style="display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>守り</button>
     </div>
   </div>
   <div style="padding:14px">
@@ -318,6 +319,28 @@
 </nav>
 
 <script>
+// ========== SVGアイコン定数 ==========
+const ICONS = {
+  aim:     `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+  death:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a9 9 0 016.36 15.36L16 20H8l-2.36-2.64A9 9 0 0112 2z"/><circle cx="9" cy="12" r="0.5" fill="currentColor"/><circle cx="15" cy="12" r="0.5" fill="currentColor"/><path d="M9 17h6"/></svg>`,
+  zap:     `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/></svg>`,
+  users:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`,
+  brain:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 01-4.96-.46 2.5 2.5 0 01-2.96-3.08 3 3 0 01-.34-5.58 2.5 2.5 0 011.32-4.24 2.5 2.5 0 014.44-1.14z"/><path d="M14.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 004.96-.46 2.5 2.5 0 002.96-3.08 3 3 0 00.34-5.58 2.5 2.5 0 00-1.32-4.24 2.5 2.5 0 00-4.44-1.14z"/></svg>`,
+  mapPin:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  sword:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5,17.5 3,6 3,3 6,3 17.5,14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg>`,
+  shield:  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  warn:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  check:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>`,
+  gun:     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h.01M6 12h.01"/><rect x="2" y="6" width="14" height="8" rx="2"/><path d="M16 10h2l3 6H16"/><path d="M9 14v3"/><path d="M6 17h6"/></svg>`,
+  ruler:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 8.7l-6-6a1 1 0 00-1.4 0l-11 11a1 1 0 000 1.4l6 6a1 1 0 001.4 0l11-11a1 1 0 000-1.4z"/><line x1="11" y1="8" x2="15" y2="12"/><line x1="8" y1="11" x2="12" y2="15"/></svg>`,
+  trophy:  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,21 12,17 16,21"/><line x1="12" y1="17" x2="12" y2="11"/><path d="M7 4H4a2 2 0 000 4c0 2 1 4 4 5"/><path d="M17 4h3a2 2 0 010 4c0 2-1 4-4 5"/><path d="M7 4h10v6a5 5 0 01-10 0V4z"/></svg>`,
+  xCircle: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+  pin:     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24z"/></svg>`,
+  clock:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>`,
+  alive:   `<svg width="12" height="12" viewBox="0 0 24 24" fill="#22c55e" stroke="none"><circle cx="12" cy="12" r="12"/></svg>`,
+  dead:    `<svg width="12" height="12" viewBox="0 0 24 24" fill="#FF4655" stroke="none"><circle cx="12" cy="12" r="12"/></svg>`,
+};
+
 // ========== ランクベンチマーク ==========
 const BENCHMARKS = {
   'Iron':      {hs:10,kd:0.75,acs:120,assists:1.0,label:'アイアン帯'},
@@ -488,14 +511,14 @@ function buildDiagTab(hsPct,kd,acs,avgAssists,mc,rankStr){
   if(!mc){document.getElementById('diag-score-area').innerHTML='';return;}
   const bench=getBench(rankStr);const target=getNextBench(bench.key);let score=0;const items=[];
   const hsDiff=bench.hs-hsPct;
-  if(hsDiff>4){items.push({sev:'bad',icon:'🎯',key:'HS率',val:hsPct+'%',vc:'bad',text:`<strong>${bench.label}平均(${bench.hs}%)より${hsDiff}%低い</strong>状態です。初弾を外してスプレー撃ちに逃げる癖があります。まず<strong class="warn">${target.hs}%</strong>を目標に。`,bar:{user:hsPct,bench:bench.hs,target:target.hs,max:40},btn:'マイクロフリック練習を見る',focus:'aim-microflick'});}
-  else if(hsDiff>0){items.push({sev:'warn',icon:'🎯',key:'HS率',val:hsPct+'%',vc:'warn',text:`<strong class="warn">${bench.label}平均まであと${hsDiff}%</strong>。クロスヘアプレイスメントを強化しましょう。`,bar:{user:hsPct,bench:bench.hs,target:target.hs,max:40},btn:'クロスヘア理論を学ぶ',focus:'aim-crosshair'});score++;}
-  else{items.push({sev:'good',icon:'🎯',key:'HS率',val:hsPct+'%',vc:'good',text:null});score+=2;}
-  if(!isNaN(kd)){const kdDiff=(bench.kd-kd).toFixed(2);if(kd<bench.kd-0.15){items.push({sev:'bad',icon:'💀',key:'K/D',val:kd.toFixed(2),vc:'bad',text:`<strong>${bench.label}平均(${bench.kd})より${kdDiff}低い</strong>です。単独ピークを避けましょう。目標: <strong class="warn">${target.kd}</strong>`,btn:'ポジショニング理論を見る',focus:'positioning'});}else if(kd<bench.kd){items.push({sev:'warn',icon:'💀',key:'K/D',val:kd.toFixed(2),vc:'warn',text:`<strong class="warn">${bench.label}平均まであと${kdDiff}</strong>。トレードデスを減らすだけで到達できます。`,btn:'トレード理論を学ぶ',focus:'trade'});score++;}else{items.push({sev:'good',icon:'💀',key:'K/D',val:kd.toFixed(2),vc:'good',text:null});score+=2;}}
-  if(acs>0){const acsDiff=bench.acs-acs;if(acsDiff>25){items.push({sev:'bad',icon:'⚡',key:'ACS',val:acs,vc:'bad',text:`<strong>${bench.label}平均(${bench.acs})より${acsDiff}低い</strong>です。目標: <strong class="warn">${target.acs}</strong>`,btn:'インパクト向上の理論を見る',focus:'acs-impact'});}else if(acsDiff>0){items.push({sev:'warn',icon:'⚡',key:'ACS',val:acs,vc:'warn',text:`<strong class="warn">${bench.label}平均まであと${acsDiff}</strong>。あと少しです。`,btn:'ACS向上のコツを見る',focus:'acs-impact'});score++;}else{items.push({sev:'good',icon:'⚡',key:'ACS',val:acs,vc:'good',text:null});score+=2;}}
+  if(hsDiff>4){items.push({sev:'bad',icon:ICONS.aim,key:'HS率',val:hsPct+'%',vc:'bad',text:`<strong>${bench.label}平均(${bench.hs}%)より${hsDiff}%低い</strong>状態です。初弾を外してスプレー撃ちに逃げる癖があります。まず<strong class="warn">${target.hs}%</strong>を目標に。`,bar:{user:hsPct,bench:bench.hs,target:target.hs,max:40},btn:'マイクロフリック練習を見る',focus:'aim-microflick'});}
+  else if(hsDiff>0){items.push({sev:'warn',icon:ICONS.aim,key:'HS率',val:hsPct+'%',vc:'warn',text:`<strong class="warn">${bench.label}平均まであと${hsDiff}%</strong>。クロスヘアプレイスメントを強化しましょう。`,bar:{user:hsPct,bench:bench.hs,target:target.hs,max:40},btn:'クロスヘア理論を学ぶ',focus:'aim-crosshair'});score++;}
+  else{items.push({sev:'good',icon:ICONS.aim,key:'HS率',val:hsPct+'%',vc:'good',text:null});score+=2;}
+  if(!isNaN(kd)){const kdDiff=(bench.kd-kd).toFixed(2);if(kd<bench.kd-0.15){items.push({sev:'bad',icon:ICONS.death,key:'K/D',val:kd.toFixed(2),vc:'bad',text:`<strong>${bench.label}平均(${bench.kd})より${kdDiff}低い</strong>です。単独ピークを避けましょう。目標: <strong class="warn">${target.kd}</strong>`,btn:'ポジショニング理論を見る',focus:'positioning'});}else if(kd<bench.kd){items.push({sev:'warn',icon:ICONS.death,key:'K/D',val:kd.toFixed(2),vc:'warn',text:`<strong class="warn">${bench.label}平均まであと${kdDiff}</strong>。トレードデスを減らすだけで到達できます。`,btn:'トレード理論を学ぶ',focus:'trade'});score++;}else{items.push({sev:'good',icon:ICONS.death,key:'K/D',val:kd.toFixed(2),vc:'good',text:null});score+=2;}}
+  if(acs>0){const acsDiff=bench.acs-acs;if(acsDiff>25){items.push({sev:'bad',icon:ICONS.zap,key:'ACS',val:acs,vc:'bad',text:`<strong>${bench.label}平均(${bench.acs})より${acsDiff}低い</strong>です。目標: <strong class="warn">${target.acs}</strong>`,btn:'インパクト向上の理論を見る',focus:'acs-impact'});}else if(acsDiff>0){items.push({sev:'warn',icon:ICONS.zap,key:'ACS',val:acs,vc:'warn',text:`<strong class="warn">${bench.label}平均まであと${acsDiff}</strong>。あと少しです。`,btn:'ACS向上のコツを見る',focus:'acs-impact'});score++;}else{items.push({sev:'good',icon:ICONS.zap,key:'ACS',val:acs,vc:'good',text:null});score+=2;}}
   const asDiff=(bench.assists-avgAssists).toFixed(1);
-  if(avgAssists<bench.assists-0.5){items.push({sev:'warn',icon:'🤝',key:'アシスト/試合',val:avgAssists,vc:'warn',text:`<strong class="warn">${bench.label}平均(${bench.assists})より${asDiff}少ない</strong>です。クロスファイアを増やしましょう。`,btn:'クロスファイア理論を学ぶ',focus:'crossfire'});score++;}
-  else{items.push({sev:'good',icon:'🤝',key:'アシスト/試合',val:avgAssists,vc:'good',text:null});score+=2;}
+  if(avgAssists<bench.assists-0.5){items.push({sev:'warn',icon:ICONS.users,key:'アシスト/試合',val:avgAssists,vc:'warn',text:`<strong class="warn">${bench.label}平均(${bench.assists})より${asDiff}少ない</strong>です。クロスファイアを増やしましょう。`,btn:'クロスファイア理論を学ぶ',focus:'crossfire'});score++;}
+  else{items.push({sev:'good',icon:ICONS.users,key:'アシスト/試合',val:avgAssists,vc:'good',text:null});score+=2;}
   const pct=Math.round((score/(items.length*2))*100);
   const col=pct>=70?'#22c55e':pct>=40?'#f59e0b':'#FF4655';
   const lbl=pct>=70?'良好':pct>=40?'改善余地あり':'要強化';
@@ -591,7 +614,7 @@ function buildPosTab(data){
       <div class="pos-num-card"><div class="pos-num ${isoPct>=40?'danger':isoPct>=20?'warn':'ok'}">${isoPct}%</div><div class="pos-num-label">孤立デス率</div></div>
     </div>
     ${engTotal>=3?`<div class="card" style="margin-bottom:10px"><div class="card-title">📏 交戦距離の分析</div>${buildRangeBar('近距離 (~15m)',shortD,engTotal,'#ef4444')}${buildRangeBar('中距離 (15-45m)',midD,engTotal,'#f59e0b')}${buildRangeBar('遠距離 (45m~)',longD,engTotal,'#3b82f6')}<div style="font-size:11px;color:var(--muted);margin-top:8px">${shortD>=midD&&shortD>=longD?'⚠️ 近距離での死亡が多い。コーナークリアリングを徹底してください。':midD>=longD?'⚠️ 中距離の正面ピークで負けています。カウンターストレイフとHS率を上げましょう。':'⚠️ 長距離アングルへの露出が多い。スモークで視線を切る意識を持ちましょう。'}</div></div>`:''}
-    ${topWeapon?`<div class="card" style="margin-bottom:10px"><div class="card-title">🔫 最もキルされた武器</div><div style="display:flex;align-items:center;gap:12px"><div style="font-size:22px;font-weight:900;color:var(--red)">${topWeapon[0]}</div><div style="font-size:13px;color:var(--muted)">${topWeapon[1]}回 (${Math.round(topWeapon[1]/totalDead*100)}%のデス)</div></div></div>`:''}`;
+    ${topWeapon?`<div class="card" style="margin-bottom:10px"><div class="card-title" style="display:flex;align-items:center;gap:6px">${ICONS.gun}最もキルされた武器</div><div style="display:flex;align-items:center;gap:12px"><div style="font-size:22px;font-weight:900;color:var(--red)">${topWeapon[0]}</div><div style="font-size:13px;color:var(--muted)">${topWeapon[1]}回 (${Math.round(topWeapon[1]/totalDead*100)}%のデス)</div></div></div>`:''}`;
   document.getElementById('pos-map-cards').innerHTML=maps.map(m=>buildMapCard(m,data[m])).join('');
   document.getElementById('pos-note').style.display='block';
   document.getElementById('pos-loading').style.display='none';
@@ -603,8 +626,8 @@ function buildRangeBar(label,count,total,color){const pct=total>0?Math.round(cou
 function buildMapCard(mapName,g){
   const deathCount=g.attack.length+g.defense.length;const killCount=g.kills_pos?.length||0;const kd=deathCount>0?(killCount/deathCount).toFixed(2):'--';const atkPct=deathCount>0?Math.round(g.attack.length/deathCount*100):0;const defPct=100-atkPct;const kdColor=parseFloat(kd)>=1?'var(--green)':parseFloat(kd)>=0.7?'var(--yellow)':'var(--red)';
   const issues=[];
-  if(deathCount>=5){if(atkPct>=65)issues.push({cls:'red',icon:'⚔️',text:`攻めで${atkPct}%の死亡 — エントリー方法を見直してください`});if(defPct>=65)issues.push({cls:'red',icon:'🛡',text:`守りで${defPct}%の死亡 — ポジションをローテーションしてください`});const isoPctM=Math.round((g.isolated/deathCount)*100);if(isoPctM>=40)issues.push({cls:'yellow',icon:'⚠️',text:`孤立デス${isoPctM}% — 単独ピークが多い`});const atkTop=g.attackClusters?.[0];if(g.attack.length>=5&&atkTop&&atkTop.n/g.attack.length>=0.60)issues.push({cls:'red',icon:'🚫',text:`攻め固定化 ${Math.round(atkTop.n/g.attack.length*100)}%が同地点 — 別ルートを使ってください`});const defTop=g.defenseClusters?.[0];if(g.defense.length>=5&&defTop&&defTop.n/g.defense.length>=0.60)issues.push({cls:'red',icon:'📌',text:`守り固定化 ${Math.round(defTop.n/g.defense.length*100)}%が同地点 — 敵に読まれています`});}
-  if(!issues.length&&deathCount>=3)issues.push({cls:'green',icon:'✅',text:'このマップでは大きな問題なし'});
+  if(deathCount>=5){if(atkPct>=65)issues.push({cls:'red',icon:ICONS.sword,text:`攻めで${atkPct}%の死亡 — エントリー方法を見直してください`});if(defPct>=65)issues.push({cls:'red',icon:ICONS.shield,text:`守りで${defPct}%の死亡 — ポジションをローテーションしてください`});const isoPctM=Math.round((g.isolated/deathCount)*100);if(isoPctM>=40)issues.push({cls:'yellow',icon:ICONS.warn,text:`孤立デス${isoPctM}% — 単独ピークが多い`});const atkTop=g.attackClusters?.[0];if(g.attack.length>=5&&atkTop&&atkTop.n/g.attack.length>=0.60)issues.push({cls:'red',icon:ICONS.xCircle,text:`攻め固定化 ${Math.round(atkTop.n/g.attack.length*100)}%が同地点 — 別ルートを使ってください`});const defTop=g.defenseClusters?.[0];if(g.defense.length>=5&&defTop&&defTop.n/g.defense.length>=0.60)issues.push({cls:'red',icon:ICONS.pin,text:`守り固定化 ${Math.round(defTop.n/g.defense.length*100)}%が同地点 — 敵に読まれています`});}
+  if(!issues.length&&deathCount>=3)issues.push({cls:'green',icon:ICONS.check,text:'このマップでは大きな問題なし'});
   const topWeapon=Object.entries(g.deathWeapons||{}).sort((a,b)=>b[1]-a[1])[0];
   return`<div class="card" style="margin-bottom:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:14px;font-weight:800">${mapName}</div><button onclick="openDetail('${mapName.replace(/'/g,"\\'")}')" style="font-size:11px;font-weight:700;color:var(--red);background:var(--red-light);border:1px solid #ffd0d5;border-radius:100px;padding:4px 12px;cursor:pointer;font-family:inherit">詳細 →</button></div><div style="font-size:11px;color:var(--muted);margin-bottom:10px">${deathCount}デス / ${killCount}キル</div><div style="display:flex;gap:10px;margin-bottom:10px"><div style="text-align:center;flex:1;background:#f8f8f8;border-radius:10px;padding:10px"><div style="font-size:20px;font-weight:900;color:${kdColor}">${kd}</div><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase">K/D</div></div><div style="flex:2;background:#f8f8f8;border-radius:10px;padding:10px"><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px">攻め / 守り デス比</div><div style="height:8px;background:#e2e8f0;border-radius:100px;overflow:hidden;display:flex"><div style="width:${atkPct}%;background:#FF4655;border-radius:100px 0 0 100px"></div><div style="width:${defPct}%;background:#3b82f6;border-radius:0 100px 100px 0"></div></div><div style="display:flex;justify-content:space-between;margin-top:3px"><span style="font-size:10px;color:#FF4655;font-weight:700">⚔ ${atkPct}%</span><span style="font-size:10px;color:#3b82f6;font-weight:700">${defPct}% 🛡</span></div></div></div>${topWeapon?`<div style="font-size:11px;color:var(--muted);margin-bottom:8px">最多キル武器: <strong style="color:var(--text)">${topWeapon[0]}</strong> (${topWeapon[1]}回)</div>`:''}${issues.map(i=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-radius:10px;margin-bottom:6px;background:${i.cls==='red'?'rgba(255,70,85,0.07)':i.cls==='yellow'?'rgba(245,158,11,0.07)':'rgba(34,197,94,0.07)'}"><span style="font-size:14px;flex-shrink:0">${i.icon}</span><span style="font-size:11px;font-weight:600;color:var(--text)">${i.text}</span></div>`).join('')}</div>`;
 }
@@ -624,19 +647,19 @@ function renderDetail(){
 }
 
 function genPhaseAdvice(rounds,phase){
-  if(rounds.length<3)return[{cls:'yellow',icon:'📊',title:'データ不足',desc:'もう少し試合数が増えると精度が上がります。'}];
+  if(rounds.length<3)return[{cls:'yellow',icon:ICONS.warn,title:'データ不足',desc:'もう少し試合数が増えると精度が上がります。'}];
   const advice=[];const deathRounds=rounds.filter(r=>!r.survived);const survRounds=rounds.filter(r=>r.survived);const highDmgDeaths=deathRounds.filter(r=>r.damage>=150&&r.kills===0).length;const multiKillRounds=rounds.filter(r=>r.kills>=2).length;const wins=rounds.filter(r=>r.won).length;const winRate=Math.round(wins/rounds.length*100);
-  if(winRate<45){if(phase==='attack')advice.push({cls:'red',icon:'⚔️',title:'攻めの勝率が低い',desc:'エントリーの成功率を上げる必要があります。スキルで視線を切ってからエントリーする意識を持ちましょう。'});else if(phase==='defense')advice.push({cls:'red',icon:'🛡',title:'守りの勝率が低い',desc:'アグレッシブすぎるか、ポジションが読まれています。遅延守備を意識してください。'});else advice.push({cls:'red',icon:'📉',title:`勝率${winRate}%`,desc:'全体的に勝率が低い状態です。チームとの連携を優先しましょう。'});}
-  else advice.push({cls:'green',icon:'✅',title:`勝率${winRate}%`,desc:phase==='attack'?'攻めのラウンドは安定しています。':'守りのラウンドは安定しています。'});
-  const earlyRoundsCount=deathRounds.filter(r=>r.kills===0&&r.damage<80).length;if(earlyRoundsCount>0&&deathRounds.length>=3){const earlyPct=Math.round(earlyRoundsCount/deathRounds.length*100);if(earlyPct>=40)advice.push({cls:'red',icon:'💀',title:`早期デスが${earlyPct}%`,desc:'ラウンド開始直後に死んでいます。ピークのタイミングを遅らせ、味方の動きを見てから動きましょう。'});}
-  if(highDmgDeaths>=2)advice.push({cls:'yellow',icon:'🔫',title:`150+DMGで${highDmgDeaths}回トレードデス`,desc:'ダメージは与えられているのにキルが取れていません。HS率を上げることで勝ちデュエルに変えられます。'});
-  if(multiKillRounds>=2)advice.push({cls:'green',icon:'🎯',title:`${multiKillRounds}ラウンドでマルチキル`,desc:'マルチキルが取れているラウンドがあります。その動きを再現しましょう。'});
-  if(survRounds.length>=3&&survRounds.filter(r=>r.kills===0).length/survRounds.length>0.5)advice.push({cls:'yellow',icon:'👣',title:'サバイブ多いがキル貢献が少ない',desc:'生き残ることは大事ですが、もっと積極的に交戦することでラウンドへの貢献を増やせます。'});
-  return advice.length?advice:[{cls:'green',icon:'✅',title:'問題なし',desc:'このフェーズのパターンは良好です。'}];
+  if(winRate<45){if(phase==='attack')advice.push({cls:'red',icon:ICONS.sword,title:'攻めの勝率が低い',desc:'エントリーの成功率を上げる必要があります。スキルで視線を切ってからエントリーする意識を持ちましょう。'});else if(phase==='defense')advice.push({cls:'red',icon:ICONS.shield,title:'守りの勝率が低い',desc:'アグレッシブすぎるか、ポジションが読まれています。遅延守備を意識してください。'});else advice.push({cls:'red',icon:ICONS.zap,title:`勝率${winRate}%`,desc:'全体的に勝率が低い状態です。チームとの連携を優先しましょう。'});}
+  else advice.push({cls:'green',icon:ICONS.check,title:`勝率${winRate}%`,desc:phase==='attack'?'攻めのラウンドは安定しています。':'守りのラウンドは安定しています。'});
+  const earlyRoundsCount=deathRounds.filter(r=>r.kills===0&&r.damage<80).length;if(earlyRoundsCount>0&&deathRounds.length>=3){const earlyPct=Math.round(earlyRoundsCount/deathRounds.length*100);if(earlyPct>=40)advice.push({cls:'red',icon:ICONS.death,title:`早期デスが${earlyPct}%`,desc:'ラウンド開始直後に死んでいます。ピークのタイミングを遅らせ、味方の動きを見てから動きましょう。'});}
+  if(highDmgDeaths>=2)advice.push({cls:'yellow',icon:ICONS.gun,title:`150+DMGで${highDmgDeaths}回トレードデス`,desc:'ダメージは与えられているのにキルが取れていません。HS率を上げることで勝ちデュエルに変えられます。'});
+  if(multiKillRounds>=2)advice.push({cls:'green',icon:ICONS.aim,title:`${multiKillRounds}ラウンドでマルチキル`,desc:'マルチキルが取れているラウンドがあります。その動きを再現しましょう。'});
+  if(survRounds.length>=3&&survRounds.filter(r=>r.kills===0).length/survRounds.length>0.5)advice.push({cls:'yellow',icon:ICONS.mapPin,title:'サバイブ多いがキル貢献が少ない',desc:'生き残ることは大事ですが、もっと積極的に交戦することでラウンドへの貢献を増やせます。'});
+  return advice.length?advice:[{cls:'green',icon:ICONS.check,title:'問題なし',desc:'このフェーズのパターンは良好です。'}];
 }
 
 function buildRoundCard(r){
-  const resultColor=r.won?'var(--green)':'var(--red)';const resultLabel=r.won?'WIN':'LOSS';const phaseLabel=r.phase==='attack'?'⚔':r.phase==='defense'?'🛡':'?';const survived=r.survived?'🟢 生存':'🔴 デス';const rangeLabel=r.deathDist!=null?(r.deathDist<1500?'近距離':r.deathDist<4500?'中距離':'遠距離'):null;const advice=genRoundAdvice(r);
+  const resultColor=r.won?'var(--green)':'var(--red)';const resultLabel=r.won?'WIN':'LOSS';const phaseLabel=r.phase==='attack'?ICONS.sword:r.phase==='defense'?ICONS.shield:'—';const survived=r.survived?`<span style="display:inline-flex;align-items:center;gap:3px">${ICONS.alive}生存</span>`:`<span style="display:inline-flex;align-items:center;gap:3px">${ICONS.dead}デス</span>`;const rangeLabel=r.deathDist!=null?(r.deathDist<1500?'近距離':r.deathDist<4500?'中距離':'遠距離'):null;const advice=genRoundAdvice(r);
   return`<div style="background:white;border:1.5px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:8px;box-shadow:var(--card-shadow)"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:38px;height:38px;border-radius:10px;background:${r.won?'rgba(34,197,94,0.1)':'rgba(255,70,85,0.1)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:${resultColor};flex-shrink:0">${resultLabel}</div><div style="flex:1"><div style="font-size:13px;font-weight:800">R${r.roundNum} <span style="font-weight:400;color:var(--muted);font-size:12px">${phaseLabel} ${r.phase==='attack'?'攻め':r.phase==='defense'?'守り':'---'}</span></div><div style="font-size:11px;color:var(--muted)">${survived}${r.deathWeapon?' · '+r.deathWeapon:''}${rangeLabel?' · '+rangeLabel:''}</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:900">${r.kills}K</div><div style="font-size:11px;color:var(--muted)">${r.damage}dmg</div></div></div>${advice?`<div style="background:#f8f8f8;border-radius:10px;padding:8px 10px;font-size:11px;color:var(--text);line-height:1.55">💡 ${advice}</div>`:''}</div>`;
 }
 
