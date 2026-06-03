@@ -19,7 +19,11 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--off-white); color: var(--text);
-    max-width: 430px; margin: 0 auto; min-height: 100vh;
+    min-height: 100vh;
+  }
+  @media(min-width:769px){
+    .header{padding:28px 32px 20px;}
+    .routine-body,.modal-content{padding-left:32px;padding-right:32px;}
   }
   .header {
     background: var(--red); padding: 52px 24px 28px;
@@ -179,6 +183,14 @@
   /* ボトムナビ修正 */
   .bottom-nav{display:none!important;}
   @media(max-width:768px){.bottom-nav{display:flex!important;}}
+
+
+  @media(min-width:769px){
+    body{max-width:none;margin:0;}
+    .main-content{min-height:100vh;}
+    /* コンテンツエリアをPC用に広げる */
+    .content-wrap,.section,.hero,.routine-list,.goal-content{max-width:none !important;width:100%;}
+  }
 
 </style>
 </head>
