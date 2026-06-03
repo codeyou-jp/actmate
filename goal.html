@@ -278,7 +278,7 @@
 
   <!-- AI推奨フォーカス -->
   <div class="section-gap">
-    <div class="section-label">🧠 AIコーチからの推奨</div>
+    <div class="section-label" style="display:flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 01-4.96-.46 2.5 2.5 0 01-2.96-3.08 3 3 0 01-.34-5.58 2.5 2.5 0 011.32-4.24 2.5 2.5 0 014.44-1.14z"/><path d="M14.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 004.96-.46 2.5 2.5 0 002.96-3.08 3 3 0 00.34-5.58 2.5 2.5 0 00-1.32-4.24 2.5 2.5 0 00-4.44-1.14z"/></svg>AIコーチからの推奨</div>
     <div id="ai-recommend-area">
       <div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px">スタッツを分析中...</div>
     </div>
@@ -368,7 +368,7 @@ function saveGoal() {
   // 初めて保存するときはstartRankを現在に設定
   if (!state.startRank) state.startRank = state.currentRank;
   localStorage.setItem('actmate_goal', JSON.stringify(state));
-  showToast('設定を保存しました ✓');
+  showToast('設定を保存しました');
   setTimeout(() => { window.location.href = 'routine.html'; }, 800);
 }
 

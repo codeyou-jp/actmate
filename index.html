@@ -110,7 +110,9 @@
   .focus-card:hover{border-color:#ffd0d5;transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,70,85,0.12);}
   .focus-card:active{transform:scale(0.98);}
   .focus-card.active{border-color:var(--red);background:var(--red-light);}
-  .focus-icon{font-size:28px;margin-bottom:10px;}
+  .focus-icon{width:32px;height:32px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;}
+  .focus-icon svg{width:28px;height:28px;color:var(--muted);}
+  .focus-card.active .focus-icon svg{color:var(--red);}
   .focus-name{font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px;}
   .focus-desc{font-size:12px;color:var(--muted);line-height:1.4;}
   .focus-card.active .focus-name{color:var(--red);}
@@ -131,7 +133,8 @@
     transition:all 0.15s;
   }
   .action-card:hover{border-color:#ffd0d5;transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,70,85,0.12);}
-  .action-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;}
+  .action-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .action-icon svg{width:24px;height:24px;}
   .action-icon.red{background:rgba(255,70,85,0.1);}
   .action-icon.blue{background:rgba(59,130,246,0.1);}
   .action-icon.green{background:rgba(34,197,94,0.1);}
@@ -263,28 +266,28 @@
       <div class="section-label">今日のフォーカス</div>
       <div class="focus-grid">
         <div class="focus-card" id="focus-aim" onclick="setFocus('aim',this)">
-          <div class="focus-icon">🎯</div>
+          <div class="focus-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
           <div class="focus-name">エイム強化</div>
           <div class="focus-desc">HS率・フリック・クロスヘアプレイスメント</div>
-          <div class="focus-active-badge">今日のフォーカス ✓</div>
+          <div class="focus-active-badge">今日のフォーカス</div>
         </div>
         <div class="focus-card" id="focus-pos" onclick="setFocus('pos',this)">
-          <div class="focus-icon">📍</div>
+          <div class="focus-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
           <div class="focus-name">立ち回り改善</div>
           <div class="focus-desc">ポジション・孤立デス・攻守バランス</div>
-          <div class="focus-active-badge">今日のフォーカス ✓</div>
+          <div class="focus-active-badge">今日のフォーカス</div>
         </div>
         <div class="focus-card" id="focus-util" onclick="setFocus('util',this)">
-          <div class="focus-icon">💡</div>
+          <div class="focus-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/></svg></div>
           <div class="focus-name">スキル活用</div>
           <div class="focus-desc">スモーク・フラッシュ・クロスファイア連携</div>
-          <div class="focus-active-badge">今日のフォーカス ✓</div>
+          <div class="focus-active-badge">今日のフォーカス</div>
         </div>
         <div class="focus-card" id="focus-mental" onclick="setFocus('mental',this)">
-          <div class="focus-icon">🧠</div>
+          <div class="focus-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 01-4.96-.46 2.5 2.5 0 01-2.96-3.08 3 3 0 01-.34-5.58 2.5 2.5 0 011.32-4.24 2.5 2.5 0 014.44-1.14z"/><path d="M14.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 004.96-.46 2.5 2.5 0 002.96-3.08 3 3 0 00.34-5.58 2.5 2.5 0 00-1.32-4.24 2.5 2.5 0 00-4.44-1.14z"/></svg></div>
           <div class="focus-name">メンタル</div>
           <div class="focus-desc">傾き防止・集中力・切り替え</div>
-          <div class="focus-active-badge">今日のフォーカス ✓</div>
+          <div class="focus-active-badge">今日のフォーカス</div>
         </div>
       </div>
 
@@ -292,28 +295,28 @@
       <div class="section-label">クイックアクセス</div>
       <div class="quick-grid">
         <a class="action-card" href="tracker.html">
-          <div class="action-icon red">📊</div>
+          <div class="action-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="#FF4655" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div>
           <div>
             <div class="action-title">スタッツ & AI診断</div>
             <div class="action-sub">直近の試合データから弱点を自動特定。ラウンドごとのアドバイスも確認できます。</div>
           </div>
         </a>
         <a class="action-card" href="knowledge.html" id="knowledge-link">
-          <div class="action-icon blue">📚</div>
+          <div class="action-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
           <div>
             <div class="action-title">知識ライブラリ</div>
             <div class="action-sub" id="knowledge-sub">今日のフォーカスに合った理論・テクニックを読む</div>
           </div>
         </a>
         <a class="action-card" href="routine.html">
-          <div class="action-icon green">🏋️</div>
+          <div class="action-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><rect x="5" y="10" width="3" height="4" rx="0.5"/><rect x="16" y="10" width="3" height="4" rx="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
           <div>
             <div class="action-title">ルーティン</div>
             <div class="action-sub">今日の練習メニューをこなして確実に上達する</div>
           </div>
         </a>
         <a class="action-card" href="goal.html">
-          <div class="action-icon yellow">🎯</div>
+          <div class="action-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="#f59e0b" stroke="none"/></svg></div>
           <div>
             <div class="action-title">目標管理</div>
             <div class="action-sub">ランク目標と進捗を確認して方向性を維持する</div>
