@@ -65,9 +65,59 @@
   .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); }
   .nav-item.active .nav-label { color: var(--red); }
   .nav-item.active .nav-icon svg { color: var(--red); }
+
+  /* ============ PC サイドバーレイアウト ============ */
+  .app-layout{display:flex;min-height:100vh;}
+  .sidebar{width:220px;flex-shrink:0;background:#0d0d14;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;overflow:hidden;}
+  .sidebar-logo{padding:28px 20px 24px;border-bottom:1px solid rgba(255,255,255,0.07);}
+  .sidebar-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,#FF4655,#ff2d3d);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
+  .sidebar-logo-icon svg{width:22px;height:22px;color:white;}
+  .sidebar-app-name{font-size:15px;font-weight:900;letter-spacing:2px;color:white;}
+  .sidebar-app-sub{font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-top:2px;}
+  .sidebar-user{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.07);}
+  .sidebar-user-name{font-size:13px;font-weight:700;color:white;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sidebar-rank{display:flex;align-items:center;gap:6px;}
+  .sidebar-rank img{width:20px;height:20px;object-fit:contain;}
+  .sidebar-rank span{font-size:11px;color:rgba(255,255,255,0.5);}
+  .sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+  .nav-section-label{font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.25);text-transform:uppercase;padding:8px 10px 4px;}
+  .sidebar-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.55);font-size:13px;font-weight:600;transition:all 0.15s;margin-bottom:2px;}
+  .sidebar-nav-item:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.9);}
+  .sidebar-nav-item.active{background:rgba(255,70,85,0.15);color:#FF4655;}
+  .sidebar-nav-item svg{width:17px;height:17px;flex-shrink:0;}
+  .sidebar-bottom{padding:16px 10px;border-top:1px solid rgba(255,255,255,0.07);}
+  .logout-btn-side{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;color:rgba(255,255,255,0.35);font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;font-family:inherit;width:100%;transition:all 0.15s;}
+  .logout-btn-side:hover{color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.05);}
+  .logout-btn-side svg{width:15px;height:15px;}
+  .main-content{margin-left:220px;flex:1;min-width:0;}
+  @media(max-width:768px){.sidebar{display:none;}.main-content{margin-left:0;}}
+
 </style>
 </head>
 <body>
+<div class="app-layout">
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div>
+    <div class="sidebar-app-name">ACTMATE</div><div class="sidebar-app-sub">VALORANT COACHING</div>
+  </div>
+  <div class="sidebar-user">
+    <div class="sidebar-user-name" id="sidebar-name">---</div>
+    <div class="sidebar-rank"><img id="sidebar-rank-img" src="" width="20" height="20" style="display:none"><span id="sidebar-rank-text">---</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">メニュー</div>
+    <a class="sidebar-nav-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>ホーム</a>
+    <a class="sidebar-nav-item" href="tracker.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>スタッツ & AI診断</a>
+    <a class="sidebar-nav-item  active" href="knowledge.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>知識ライブラリ</a>
+    <a class="sidebar-nav-item" href="routine.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><line x1="8" y1="12" x2="16" y2="12"/></svg>ルーティン</a>
+    <a class="sidebar-nav-item" href="goal.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>目標管理</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="logout-btn-side" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>ログアウト</button>
+  </div>
+</aside>
+<div class="main-content">
 
 <div class="hero">
   <div class="hero-label">ACTMATE</div>
@@ -204,6 +254,30 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('focus-banner').classList.add('visible');
   setTimeout(() => card.scrollIntoView({ behavior:'smooth', block:'center' }), 300);
 });
+</script>
+</div></div>
+
+<script id="sidebar-js">
+(function(){
+  const RANK_TO_FILE={'Iron 1':'iron1','Iron 2':'iron2','Iron 3':'iron3','Bronze 1':'bronze1','Bronze 2':'bronze2','Bronze 3':'bronze3','Silver 1':'silver1','Silver 2':'silver2','Silver 3':'silver3','Gold 1':'gold1','Gold 2':'gold2','Gold 3':'gold3','Platinum 1':'plat1','Platinum 2':'plat2','Platinum 3':'plat3','Diamond 1':'dia1','Diamond 2':'dia2','Diamond 3':'dia3','Ascendant 1':'asc1','Ascendant 2':'asc2','Ascendant 3':'asc3','Immortal 1':'imm1','Immortal 2':'imm2','Immortal 3':'imm3','Radiant':'radiant'};
+  const raw=localStorage.getItem('actmate_user');
+  if(!raw){window.location.href='login.html';return;}
+  const u=JSON.parse(raw);
+  const sn=document.getElementById('sidebar-name');
+  if(sn)sn.textContent=u.name+' #'+u.tag;
+  fetch('/api/henrik?path=valorant/v2/mmr/'+u.region+'/'+encodeURIComponent(u.name)+'/'+encodeURIComponent(u.tag))
+    .then(r=>r.json()).then(d=>{
+      const rank=d?.data?.current_data?.currenttierpatched;
+      const rr=d?.data?.current_data?.ranking_in_tier;
+      if(!rank)return;
+      const f=RANK_TO_FILE[rank];
+      const rt=document.getElementById('sidebar-rank-text');
+      const ri=document.getElementById('sidebar-rank-img');
+      if(rt)rt.textContent=rank+'  '+rr+'RR';
+      if(ri&&f){ri.src='rank_icons/'+f+'.png';ri.style.display='block';}
+    }).catch(()=>{});
+})();
+if(typeof logout==='undefined'){function logout(){if(confirm('ログアウトしますか？')){localStorage.removeItem('actmate_user');window.location.href='login.html';}}}
 </script>
 </body>
 </html>
