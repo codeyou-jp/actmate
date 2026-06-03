@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ACTMATE - ログイン</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d0d14;color:white;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+
+  .logo-area{text-align:center;margin-bottom:48px;}
+  .logo-icon{width:72px;height:72px;background:linear-gradient(135deg,#FF4655,#ff6b77);border-radius:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 32px rgba(255,70,85,0.4);}
+  .logo-icon svg{width:38px;height:38px;color:white;}
+  .logo-name{font-size:28px;font-weight:900;letter-spacing:2px;color:white;}
+  .logo-sub{font-size:13px;color:rgba(255,255,255,0.4);margin-top:6px;letter-spacing:1px;}
+
+  .card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:28px 24px;width:100%;max-width:380px;backdrop-filter:blur(10px);}
+  .card-title{font-size:18px;font-weight:800;margin-bottom:6px;}
+  .card-sub{font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:24px;line-height:1.6;}
+
+  .input-group{margin-bottom:14px;}
+  .input-label{font-size:11px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:7px;}
+  .input-row{display:flex;gap:8px;}
+  .text-input{flex:1;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:13px 15px;font-size:15px;color:white;font-family:inherit;outline:none;transition:border-color 0.15s;min-width:0;}
+  .text-input::placeholder{color:rgba(255,255,255,0.25);}
+  .text-input:focus{border-color:#FF4655;}
+  .region-sel{background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:13px 10px;font-size:13px;color:white;font-family:inherit;outline:none;cursor:pointer;flex-shrink:0;}
+  .region-sel option{background:#1a1a2e;color:white;}
+
+  .login-btn{width:100%;background:linear-gradient(135deg,#FF4655,#ff2d3d);color:white;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:8px;transition:opacity 0.15s;letter-spacing:0.5px;}
+  .login-btn:active{opacity:0.85;}
+
+  .hint{font-size:11px;color:rgba(255,255,255,0.3);text-align:center;margin-top:14px;line-height:1.7;}
+
+  .error{background:rgba(255,70,85,0.15);border:1px solid rgba(255,70,85,0.3);border-radius:10px;padding:10px 14px;font-size:12px;color:#FF4655;margin-top:10px;display:none;}
+  .error.show{display:block;}
+
+  .deco{position:fixed;top:-100px;right:-100px;width:300px;height:300px;background:radial-gradient(circle,rgba(255,70,85,0.15),transparent 70%);pointer-events:none;}
+  .deco2{position:fixed;bottom:-100px;left:-100px;width:300px;height:300px;background:radial-gradient(circle,rgba(255,70,85,0.08),transparent 70%);pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="deco"></div>
+<div class="deco2"></div>
+
+<div class="logo-area">
+  <div class="logo-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+    </svg>
+  </div>
+  <div class="logo-name">ACTMATE</div>
+  <div class="logo-sub">VALORANT COACHING APP</div>
+</div>
+
+<div class="card">
+  <div class="card-title">Riot IDでログイン</div>
+  <div class="card-sub">あなたのRiot IDを入力してください。<br>スタッツと弱点を自動分析します。</div>
+
+  <div class="input-group">
+    <div class="input-label">Riot ID</div>
+    <div class="input-row">
+      <input class="text-input" id="name-input" type="text" placeholder="PlayerName" autocomplete="off" autocorrect="off" autocapitalize="off">
+      <span style="display:flex;align-items:center;color:rgba(255,255,255,0.3);font-size:18px;font-weight:300;flex-shrink:0">#</span>
+      <input class="text-input" id="tag-input" type="text" placeholder="JP1" style="max-width:80px" autocomplete="off" autocorrect="off" autocapitalize="off">
+    </div>
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">サーバー</div>
+    <select class="region-sel" id="region-sel" style="width:100%">
+      <option value="ap">アジア太平洋 (AP)</option>
+      <option value="na">北米 (NA)</option>
+      <option value="eu">ヨーロッパ (EU)</option>
+      <option value="kr">韓国 (KR)</option>
+    </select>
+  </div>
+
+  <button class="login-btn" onclick="doLogin()">プレイ開始 →</button>
+  <div class="error" id="error-msg">名前とタグを両方入力してください</div>
+  <div class="hint">入力情報はあなたのブラウザにのみ保存されます。<br>サーバーには送信されません。</div>
+</div>
+
+<script>
+// すでにログイン済みならindexへ
+const saved = localStorage.getItem('actmate_user');
+if(saved) {
+  window.location.href = 'index.html';
+}
+
+function doLogin() {
+  const name = document.getElementById('name-input').value.trim();
+  const tag  = document.getElementById('tag-input').value.trim().replace('#','');
+  const region = document.getElementById('region-sel').value;
+  const err = document.getElementById('error-msg');
+
+  if(!name || !tag) {
+    err.textContent = '名前とタグを両方入力してください';
+    err.classList.add('show');
+    return;
+  }
+  err.classList.remove('show');
+
+  localStorage.setItem('actmate_user', JSON.stringify({ name, tag, region }));
+  window.location.href = 'index.html';
+}
+
+// Enterキー対応
+document.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>

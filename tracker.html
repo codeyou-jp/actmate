@@ -20,13 +20,19 @@
 
   /* 検索 */
   .search-area{background:white;border-bottom:1.5px solid var(--border);padding:12px 16px;}
-  .search-row{display:flex;gap:8px;}
-  .search-input{flex:1;border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;font-size:15px;font-family:inherit;outline:none;transition:border-color 0.15s;}
+  .search-row{display:flex;gap:6px;flex-wrap:nowrap;}
+  .search-input{flex:1;border:1.5px solid var(--border);border-radius:12px;padding:11px 10px;font-size:14px;font-family:inherit;outline:none;transition:border-color 0.15s;min-width:0;}
   .search-input:focus{border-color:var(--red);}
-  .region-select{border:1.5px solid var(--border);border-radius:12px;padding:11px 10px;font-size:13px;font-family:inherit;outline:none;background:white;cursor:pointer;}
-  .search-btn{background:var(--red);color:white;border:none;border-radius:12px;padding:11px 16px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;}
+  .region-select{border:1.5px solid var(--border);border-radius:12px;padding:11px 6px;font-size:12px;font-family:inherit;outline:none;background:white;cursor:pointer;flex-shrink:0;}
+  .search-btn{background:var(--red);color:white;border:none;border-radius:12px;padding:11px 14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;flex-shrink:0;}
   .search-btn:active{opacity:0.85;}
   .search-hint{font-size:11px;color:var(--muted);margin-top:6px;}
+  @media(max-width:380px){
+    .search-input{font-size:13px;padding:10px 8px;}
+    .search-btn{padding:10px 10px;font-size:12px;}
+    .stat-value{font-size:22px;}
+    .tab-btn{font-size:11px;}
+  }
 
   /* プロフィールミニ */
   .profile-mini{display:none;align-items:center;gap:12px;padding-bottom:16px;}
@@ -1531,6 +1537,17 @@ function genRoundAdvice(r) {
 
   return null;
 }
+
+// ログインチェック＆自動入力
+(function(){
+  const u = localStorage.getItem('actmate_user');
+  if(!u) { window.location.href='login.html'; return; }
+  const {name,tag,region} = JSON.parse(u);
+  const inp = document.getElementById('riot-input');
+  const sel = document.getElementById('region-select');
+  if(inp && !inp.value) inp.value = `${name}#${tag}`;
+  if(sel) sel.value = region || 'ap';
+})();
 
 loadSaved();
 </script>
