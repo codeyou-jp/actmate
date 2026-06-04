@@ -107,7 +107,7 @@
 
   /* モーダル */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: flex-end; }
-  .modal-sheet { background: white; border-radius: 24px 24px 0 0; padding: 20px 20px 40px; width: 100%; max-width: 430px; margin: 0 auto; }
+  .modal-sheet { background: white; border-radius: 24px 24px 0 0; padding: 20px 20px 40px; width: 100%; max-width: 430px; margin: 0 auto; max-height: 90vh; overflow-y: auto; }
   .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 100px; margin: 0 auto 18px; }
   .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
   .modal-title svg { width: 20px; height: 20px; color: var(--red); }
@@ -118,6 +118,25 @@
   .preset-chip { font-size: 11px; padding: 5px 12px; border-radius: 100px; border: 1.5px solid var(--border); background: white; cursor: pointer; font-family: inherit; font-weight: 600; transition: all 0.15s; }
   .preset-chip.sel { border-color: var(--red); background: var(--red-light); color: var(--red); }
   .modal-save { width: 100%; margin-top: 20px; background: var(--red); color: white; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 800; font-family: inherit; cursor: pointer; }
+
+  /* ソフトタブ */
+  .soft-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .soft-tab { flex: 1; padding: 8px 4px; font-size: 11px; font-weight: 800; border-radius: 10px; border: 1.5px solid var(--border); background: white; cursor: pointer; font-family: inherit; transition: all 0.15s; text-align: center; }
+  .soft-tab.active { background: #0d0d14; border-color: #0d0d14; color: white; }
+  .soft-tab.aim-tab.active  { background: #4f46e5; border-color: #4f46e5; }
+  .soft-tab.volt-tab.active { background: #f59e0b; border-color: #f59e0b; }
+  .soft-tab.valo-tab.active { background: var(--red); border-color: var(--red); }
+
+  /* プリセットカード */
+  .preset-card { border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 12px; cursor: pointer; transition: all 0.15s; margin-bottom: 6px; }
+  .preset-card:hover { border-color: #ccc; }
+  .preset-card.sel { border-color: var(--red); background: var(--red-light); }
+  .preset-card-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .preset-card-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .preset-card-meta { display: flex; gap: 8px; margin-top: 5px; }
+  .preset-card-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; background: var(--off-white); color: var(--muted); border: 1px solid var(--border); }
+  .preset-panel { display: none; }
+  .preset-panel.show { display: block; }
 
   /* 完了バー */
   .complete-bar { position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 398px; z-index: 100; }
@@ -284,10 +303,109 @@
       </svg>
       練習を追加
     </div>
-    <div class="field-label">内容</div>
-    <input class="field-input" id="custom-title" placeholder="例: デスマッチ 10分" type="text">
-    <div class="field-label">プリセット</div>
-    <div class="preset-chips" id="preset-chips"></div>
+
+    <!-- ソフト選択タブ -->
+    <div class="field-label">ソフト・ツールを選ぶ</div>
+    <div class="soft-tabs">
+      <button class="soft-tab aim-tab" onclick="switchSoftTab('aimlabs',this)">Aim Lab</button>
+      <button class="soft-tab volt-tab" onclick="switchSoftTab('voltaic',this)">Voltaic</button>
+      <button class="soft-tab valo-tab active" onclick="switchSoftTab('valorant',this)">VALORANT</button>
+      <button class="soft-tab" onclick="switchSoftTab('custom',this)">自由入力</button>
+    </div>
+
+    <!-- Aim Lab パネル -->
+    <div class="preset-panel" id="panel-aimlabs">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Aim Lab内のシナリオ名をそのまま検索してプレイできます</div>
+      <div class="preset-card" onclick="selectPresetCard(this,'Sixshot（Aim Lab）',15,'エイム')">
+        <div class="preset-card-title">Sixshot</div>
+        <div class="preset-card-desc">6つの極小ターゲットを切り替え。マイクロフリック精度が上がる。Demon1・yay推奨</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">マイクロフリック</span><span class="preset-card-tag">15分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'mini god（Aim Lab）',20,'エイム')">
+        <div class="preset-card-title">mini god</div>
+        <div class="preset-card-desc">極小ターゲットで精度特化。HS率が低い人に特におすすめ。命中率90%を目指す</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">HS率改善</span><span class="preset-card-tag">20分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'Microshot（Aim Lab）',15,'エイム')">
+        <div class="preset-card-title">Microshot</div>
+        <div class="preset-card-desc">1発ずつ確実に当てる精密クリック練習。ゆっくりでいいので外さないことを意識</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">精度</span><span class="preset-card-tag">15分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'Spidershot（Aim Lab）',10,'エイム')">
+        <div class="preset-card-title">Spidershot</div>
+        <div class="preset-card-desc">全方位からのターゲットへ素早くフリック。反応速度と切り替えを同時に鍛える</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">フリック</span><span class="preset-card-tag">10分</span></div>
+      </div>
+    </div>
+
+    <!-- Voltaic パネル -->
+    <div class="preset-panel" id="panel-voltaic">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Voltaicは無料のエイムランキングシステム。voltaic.gg でシナリオを確認できます</div>
+      <div class="preset-card" onclick="selectPresetCard(this,'Voltaic VALORANT Benchmark（Kovaak\'s）',30,'エイム')">
+        <div class="preset-card-title">Voltaic VAL Benchmark（Kovaak's）</div>
+        <div class="preset-card-desc">Kovaak's上でVALORANT向けエイムを測定。Iron〜Proのスコア目安あり。週1回記録すると成長がわかる</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">ベンチマーク</span><span class="preset-card-tag">30分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'Voltaic Novice Routine（Kovaak\'s）',25,'エイム')">
+        <div class="preset-card-title">Voltaic Novice Routine</div>
+        <div class="preset-card-desc">エイム初心者〜中級者向けのVoltaic推奨ルーティン。フリック・トラッキング・切り替えをバランスよく網羅</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">入門〜中級</span><span class="preset-card-tag">25分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'Voltaic Intermediate Routine（Kovaak\'s）',30,'エイム')">
+        <div class="preset-card-title">Voltaic Intermediate Routine</div>
+        <div class="preset-card-desc">中級者以上向け。ダイヤ〜アセンダント帯を目指す人のVoltaic推奨メニュー</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">中〜上級</span><span class="preset-card-tag">30分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'smth Kovaak\'s プレイリスト',25,'エイム')">
+        <div class="preset-card-title">smth プレイリスト（Kovaak's）</div>
+        <div class="preset-card-desc">NRG smth使用のプレイリスト。フリック・トラッキングをバランスよく練習できる</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">smth推奨</span><span class="preset-card-tag">25分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'gon Kovaak\'s プレイリスト',25,'エイム')">
+        <div class="preset-card-title">gon プレイリスト（Kovaak's）</div>
+        <div class="preset-card-desc">フリック精度向上に定評のあるプレイリスト。これをこなすだけでエイム基礎が固まる</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">gon推奨</span><span class="preset-card-tag">25分</span></div>
+      </div>
+    </div>
+
+    <!-- VALORANT パネル -->
+    <div class="preset-panel show" id="panel-valorant">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">ゲーム内練習。毎回テーマを1つ決めてから始めること（nAts流）</div>
+      <div class="preset-card" onclick="selectPresetCard(this,'射撃場 ボット100体（レンジ）',10,'ウォームアップ')">
+        <div class="preset-card-title">射撃場 ボット100体</div>
+        <div class="preset-card-desc">デスマッチ前に必ずやる。手を温めてマウスの感覚を作る。やり方は何でもOK（nAts鉄則）</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">ウォームアップ</span><span class="preset-card-tag">10分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'射撃場 ハードボット（フリック確認）',10,'エイム')">
+        <div class="preset-card-title">射撃場 ハードボット（フリック確認）</div>
+        <div class="preset-card-desc">アーマーなしのハードボットを1タップで倒す。今日のフリック精度を確認するためのドリル</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">フリック</span><span class="preset-card-tag">10分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'射撃場 トラッキング走り込み',10,'エイム')">
+        <div class="preset-card-title">射撃場 走りながらトラッキング</div>
+        <div class="preset-card-desc">走りながらボットの頭にクロスヘアを合わせ続ける。nAtsが「1日5〜15分で効果を実感できる」と語るドリル</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">トラッキング</span><span class="preset-card-tag">10分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'デスマッチ（テーマ設定必須）',15,'デスマッチ')">
+        <div class="preset-card-title">デスマッチ（テーマ設定必須）</div>
+        <div class="preset-card-desc">入る前に今日のテーマを1つ決める。例：「クロスヘアプレイスメントだけ意識」「シェリフ縛り」など</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">実戦練習</span><span class="preset-card-tag">15分</span></div>
+      </div>
+      <div class="preset-card" onclick="selectPresetCard(this,'チームデスマッチ',15,'デスマッチ')">
+        <div class="preset-card-title">チームデスマッチ</div>
+        <div class="preset-card-desc">Demon1が「普通のDMより断然おすすめ」と語る。バースト撃ち＋ストレイフのリズムを意識して回す</div>
+        <div class="preset-card-meta"><span class="preset-card-tag">実戦</span><span class="preset-card-tag">15分</span></div>
+      </div>
+    </div>
+
+    <!-- 自由入力パネル -->
+    <div class="preset-panel" id="panel-custom">
+      <div class="field-label" style="margin-top:4px">内容</div>
+      <input class="field-input" id="custom-title" placeholder="例: デスマッチ 10分" type="text">
+      <div class="field-label">プリセット</div>
+      <div class="preset-chips" id="preset-chips"></div>
+    </div>
+
     <div class="field-label">時間（分）</div>
     <input class="field-input" id="custom-time" type="number" placeholder="15" min="1" max="120">
     <div class="field-label">カテゴリ</div>
@@ -538,20 +656,57 @@ function toggleTask(id) {
   if (t) { t.done = !t.done; saveTasks(); render(); }
 }
 
+let currentSoftTab = 'valorant';
+let selectedPresetTitle = '';
+let selectedPresetTime = 0;
+let selectedPresetCat = '';
+
 function openModal() {
+  selectedPresetTitle = ''; selectedPresetTime = 0; selectedPresetCat = '';
   document.getElementById('custom-title').value = '';
   document.getElementById('custom-time').value  = '';
   customCat = '';
-  document.getElementById('preset-chips').innerHTML = PRESETS.map(p =>
-    `<button class="preset-chip" onclick="selectPreset(this,'${p}')">${p}</button>`
-  ).join('');
+  // カテゴリチップ
   document.getElementById('cat-chips').innerHTML = CATS.map(c =>
     `<button class="preset-chip" onclick="selectCat(this,'${c}')">${c}</button>`
   ).join('');
+  // 自由入力プリセット
+  document.getElementById('preset-chips').innerHTML = PRESETS.map(p =>
+    `<button class="preset-chip" onclick="selectPreset(this,'${p}')">${p}</button>`
+  ).join('');
+  // デフォルトタブをVALORANTに
+  switchSoftTab('valorant', document.querySelector('.soft-tab.valo-tab'));
   document.getElementById('add-modal').style.display = 'flex';
 }
 
 function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
+
+function switchSoftTab(tabName, el) {
+  currentSoftTab = tabName;
+  document.querySelectorAll('.soft-tab').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.preset-panel').forEach(p => p.classList.remove('show'));
+  const panel = document.getElementById('panel-' + tabName);
+  if (panel) panel.classList.add('show');
+  // プリセットカードの選択をリセット
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('sel'));
+  selectedPresetTitle = ''; selectedPresetTime = 0; selectedPresetCat = '';
+}
+
+function selectPresetCard(el, title, time, cat) {
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedPresetTitle = title;
+  selectedPresetTime  = time;
+  selectedPresetCat   = cat;
+  // 時間欄に自動反映
+  document.getElementById('custom-time').value = time;
+  // カテゴリチップも自動選択
+  document.querySelectorAll('#cat-chips .preset-chip').forEach(b => {
+    if (b.textContent === cat) { b.classList.add('sel'); customCat = cat; }
+    else b.classList.remove('sel');
+  });
+}
 
 function selectPreset(el, val) {
   document.querySelectorAll('#preset-chips .preset-chip').forEach(b => b.classList.remove('sel'));
@@ -566,10 +721,17 @@ function selectCat(el, val) {
 }
 
 function saveCustom() {
-  const title = document.getElementById('custom-title').value.trim();
-  const time  = parseInt(document.getElementById('custom-time').value) || 0;
+  let title, time;
+  if (currentSoftTab !== 'custom' && selectedPresetTitle) {
+    title = selectedPresetTitle;
+    time  = parseInt(document.getElementById('custom-time').value) || selectedPresetTime;
+  } else {
+    title = document.getElementById('custom-title').value.trim();
+    time  = parseInt(document.getElementById('custom-time').value) || 0;
+  }
   if (!title) return;
-  tasks.push({ id:'custom_'+Date.now(), title, time, tag:customCat||'カスタム', detail:'', done:false });
+  const tag = customCat || selectedPresetCat || 'カスタム';
+  tasks.push({ id:'custom_'+Date.now(), title, time, tag, detail:'', done:false });
   saveTasks(); closeModal(); render();
 }
 
